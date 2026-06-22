@@ -1081,6 +1081,21 @@
     }
     .profile-msg .meta { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
     .profile-empty { font-size: 13px; color: var(--text-dim); text-align: center; padding: 12px; }
+    /* 滚动到底提示（移动端底部阴影渐变） */
+    .profile-scroll-hint {
+      position: sticky;
+      bottom: 0;
+      margin: -8px -20px -22px;
+      padding: 24px 16px 12px;
+      background: linear-gradient(to bottom, transparent, var(--surface-strong) 60%);
+      color: var(--accent);
+      font-size: 11px;
+      text-align: center;
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+      pointer-events: none;
+    }
+    .profile-scroll-hint.hidden { display: none; }
 
     /* =========================================================
        调试面板（浮动）
@@ -1716,6 +1731,8 @@
       'profile.recentEmpty': 'TA 最近 24 小时没有留言',
       'profile.copyWx': '微信号已复制：{wx}',
       'profile.tags': '爱好标签',
+      'profile.tagsEmpty': 'TA 还没选爱好标签',
+      'profile.linksEmpty': 'TA 还没留联系方式',
       // 调试面板
       'debug.title': '调试面板',
       'debug.locationPresets': '模拟位置',
@@ -1885,6 +1902,8 @@
       'profile.recentEmpty': 'No messages in the last 24h',
       'profile.copyWx': 'WeChat ID copied: {wx}',
       'profile.tags': 'Interests',
+      'profile.tagsEmpty': 'No interest tags yet',
+      'profile.linksEmpty': 'No contact info yet',
       // debug
       'debug.title': 'Debug',
       'debug.locationPresets': 'Mock location',
@@ -3183,62 +3202,70 @@
     hero.appendChild(txt);
     el.profileContent.appendChild(hero);
 
-    // 标签（新版：[{tag, items[]}]；兼容旧字符串数组）
+    // 标签 section（始终显示，空时显示提示）
     const tags = normalizeTags(p.tags);
-    if (tags.length) {
+    {
       const sec = document.createElement('div');
       sec.className = 'profile-section';
       const h = document.createElement('h4');
       h.textContent = t('profile.tags');
       sec.appendChild(h);
-      const wrap = document.createElement('div');
-      wrap.className = 'profile-tags';
-      wrap.style.flexDirection = 'column';
-      wrap.style.alignItems = 'flex-start';
-      wrap.style.gap = '4px';
-      tags.forEach(o => {
-        const line = document.createElement('div');
-        line.style.cssText = 'font-size:13px;line-height:1.5;color:var(--text);';
-        const head = document.createElement('span');
-        head.style.cssText = 'display:inline-block;padding:2px 9px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px;';
-        head.textContent = o.tag;
-        line.appendChild(head);
-        if (o.items && o.items.length) {
-          const tail = document.createElement('span');
-          tail.style.color = 'var(--text-dim)';
-          tail.textContent = o.items.join(' · ');
-          line.appendChild(tail);
-        }
-        wrap.appendChild(line);
-      });
-      sec.appendChild(wrap);
+      if (tags.length) {
+        const wrap = document.createElement('div');
+        wrap.className = 'profile-tags';
+        wrap.style.flexDirection = 'column';
+        wrap.style.alignItems = 'flex-start';
+        wrap.style.gap = '4px';
+        tags.forEach(o => {
+          const line = document.createElement('div');
+          line.style.cssText = 'font-size:13px;line-height:1.5;color:var(--text);';
+          const head = document.createElement('span');
+          head.style.cssText = 'display:inline-block;padding:2px 9px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px;';
+          head.textContent = o.tag;
+          line.appendChild(head);
+          if (o.items && o.items.length) {
+            const tail = document.createElement('span');
+            tail.style.color = 'var(--text-dim)';
+            tail.textContent = o.items.join(' · ');
+            line.appendChild(tail);
+          }
+          wrap.appendChild(line);
+        });
+        sec.appendChild(wrap);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'profile-empty';
+        empty.textContent = t('profile.tagsEmpty');
+        sec.appendChild(empty);
+      }
       el.profileContent.appendChild(sec);
     }
 
-    // 链接
+    // 链接 section（始终显示）
     const links = Array.isArray(p.links) ? p.links : [];
-    if (links.length) {
+    {
       const sec = document.createElement('div');
       sec.className = 'profile-section';
       const h = document.createElement('h4');
       h.textContent = t('profile.contact');
       sec.appendChild(h);
-      const wrap = document.createElement('div');
-      wrap.className = 'profile-links';
-      links.forEach(l => {
-        const info = LINK_TYPES[l.type] || LINK_TYPES.other;
-        const a = document.createElement('a');
-        a.className = 'profile-link';
-        a.href = (l.type === 'wechat') ? '#' : l.url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.innerHTML = linkIcon(l.type || 'other');
-        const label = document.createElement('span');
-        label.textContent = (l.label && String(l.label).trim()) ? l.label : info.label;
-        a.appendChild(label);
-        if (l.type !== 'wechat') {
-          try {
-            const host = new URL(l.url).hostname.replace(/^www\./, '');
+      if (links.length) {
+        const wrap = document.createElement('div');
+        wrap.className = 'profile-links';
+        links.forEach(l => {
+          const info = LINK_TYPES[l.type] || LINK_TYPES.other;
+          const a = document.createElement('a');
+          a.className = 'profile-link';
+          a.href = (l.type === 'wechat') ? '#' : l.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.innerHTML = linkIcon(l.type || 'other');
+          const label = document.createElement('span');
+          label.textContent = (l.label && String(l.label).trim()) ? l.label : info.label;
+          a.appendChild(label);
+          if (l.type !== 'wechat') {
+            try {
+              const host = new URL(l.url).hostname.replace(/^www\./, '');
             const u = document.createElement('span');
             u.className = 'url';
             u.textContent = host;
@@ -3255,6 +3282,12 @@ showToast(t('profile.copyWx', { wx: l.url }));
         wrap.appendChild(a);
       });
       sec.appendChild(wrap);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'profile-empty';
+        empty.textContent = t('profile.linksEmpty');
+        sec.appendChild(empty);
+      }
       el.profileContent.appendChild(sec);
     }
 
@@ -3289,6 +3322,29 @@ showToast(t('profile.copyWx', { wx: l.url }));
       sec.appendChild(wrap);
     }
     el.profileContent.appendChild(sec);
+
+    // 诊断条：显示拉到了多少数据，方便排查"看不到内容"
+    const diag = document.createElement('div');
+    diag.style.cssText = 'margin-top:12px;padding:6px 10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);text-align:center;';
+    diag.textContent = `[数据诊断] tags=${(p.tags||[]).length} · links=${(p.links||[]).length} · 留言=${msgs.length}`;
+    el.profileContent.appendChild(diag);
+
+    // 移动端滚动提示：内容超出可滚时显示，到底后自动隐藏
+    const hint = document.createElement('div');
+    hint.className = 'profile-scroll-hint';
+    hint.textContent = '↓ 往下滚动查看更多';
+    el.profileContent.appendChild(hint);
+    requestAnimationFrame(() => {
+      const checkScroll = () => {
+        const c = el.profileContent;
+        const canScroll = c.scrollHeight - c.clientHeight > 8;
+        const atBottom = c.scrollTop + c.clientHeight >= c.scrollHeight - 8;
+        if (!canScroll || atBottom) hint.classList.add('hidden');
+        else hint.classList.remove('hidden');
+      };
+      el.profileContent.addEventListener('scroll', checkScroll, { passive: true });
+      checkScroll();
+    });
   }
   el.settingsMask.addEventListener('click', e => {
     if (e.target === el.settingsMask) closeSettings();
