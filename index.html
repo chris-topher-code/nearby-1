@@ -501,6 +501,10 @@
       transform: translate(-50%, -50%) scale(1.15);
       z-index: 60 !important;
     }
+    .star-avatar:active {
+      transform: translate(-50%, -50%) scale(0.92);
+      box-shadow: 0 0 20px rgba(0,229,255,0.9), 0 0 40px rgba(0,229,255,0.4);
+    }
     .star-avatar.lvl-near {
       border-color: rgba(0, 229, 255, 0.9);
       box-shadow: 0 0 20px rgba(0, 229, 255, 0.7), 0 0 40px rgba(0, 229, 255, 0.3);
@@ -1032,6 +1036,15 @@
     }
     .profile-hero .name { font-size: 18px; font-weight: 700; }
     .profile-hero .bio { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+    @media (max-width: 768px) {
+      .profile-hero { gap: 10px; padding-bottom: 10px; margin-bottom: 10px; }
+      .profile-hero .name { font-size: 16px; }
+      .profile-hero .bio { font-size: 12px; line-height: 1.4; }
+      .profile-hero .avatar.xl { width: 56px; height: 56px; font-size: 20px; }
+      .profile-section { margin-bottom: 12px; }
+      .profile-section h4 { margin: 0 0 6px; }
+      .profile-msg { padding: 8px 10px; font-size: 12px; }
+    }
     .profile-section { margin-bottom: 14px; }
     .profile-section h4 {
       font-size: 11px;
@@ -3063,7 +3076,15 @@
   async function openProfilePage(sessionId) {
     if (!sessionId) return;
     currentProfileSessionId = sessionId;
+    if (!el.profileMask) {
+      console.error('[profile] profileMask element not found');
+      return;
+    }
     el.profileMask.classList.add('show');
+    // 移动端兜底：强制刷新滚动位置，确保弹层可见
+    if (el.profileContent) {
+      el.profileContent.scrollTop = 0;
+    }
     el.profileContent.innerHTML = `<div class="profile-empty" data-i18n="profile.loading">${t('profile.loading')}</div>`;
     try {
       let p, msgs;
@@ -3550,14 +3571,27 @@ showToast(t('profile.copyWx', { wx: l.url }));
 
       // 点击头像：直接打开个人主页（桌面、移动端行为一致，最稳）
       // 移动端不依赖 toggle —— 个人主页里就有完整留言、bio、联系方式、链接
-      av.addEventListener('click', (e) => {
+      let lastOpenAt = 0;
+      const handleAvatarClick = (e) => {
         e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        // 触屏 click + touchend 会触发两次，800ms 内只开一次
+        const now = Date.now();
+        if (now - lastOpenAt < 800) return;
+        lastOpenAt = now;
         // 关闭任何悬停气泡（桌面）
         if (currentBubble) {
           currentBubble.classList.remove('show');
           currentBubble = null;
         }
+        dbg.lastFetchErr = null;
         openProfilePage(r.session_id);
+      };
+      av.addEventListener('click', handleAvatarClick);
+      // 触屏兜底：iOS Safari 旧版 / Android 某些 WebView 在某些情况下 click 事件不触发
+      av.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleAvatarClick(e);
       });
 
       el.starfield.appendChild(av);
