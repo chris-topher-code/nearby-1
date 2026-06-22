@@ -1,0 +1,4102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <title data-i18n="app.docTitle">近场偶遇 · 5 分钟时空胶囊</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* =========================================================
+       设计令牌 —— 移动端（科技感 / 玻璃拟态 / 霓虹）默认
+       ========================================================= */
+    :root {
+      --bg-0:        #050810;
+      --bg-1:        #0a0e1a;
+      --bg-2:        #0f1424;
+      --surface:     rgba(20, 26, 44, 0.55);
+      --surface-2:   rgba(28, 36, 60, 0.65);
+      --surface-strong: rgba(20, 26, 44, 0.85);
+      --border:      rgba(120, 160, 255, 0.18);
+      --border-strong: rgba(120, 200, 255, 0.45);
+      --text:        #eaf2ff;
+      --text-dim:    #8696b8;
+      --accent:      #00e5ff;
+      --accent-2:    #7c4dff;
+      --accent-3:    #ff5fae;
+      --ok:          #3ecf8e;
+      --err:         #ff5c7a;
+      --glow:        0 0 24px rgba(0, 229, 255, 0.35);
+      --radius:      16px;
+      --radius-lg:   22px;
+      --font-mono:   ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                     "PingFang SC", monospace;
+    }
+
+    /* =========================================================
+       桌面端令牌 —— 暖色 / 平面 / 阅读舒适
+       仅在 >= 769px 时覆盖
+       ========================================================= */
+    @media (min-width: 769px) {
+      :root {
+        --bg-0:        #111418;
+        --bg-1:        #111418;
+        --bg-2:        #1a1f26;
+        --surface:     #1a1f26;
+        --surface-2:   #232a33;
+        --surface-strong: #1a1f26;
+        --border:      #2a313b;
+        --border-strong: #3a4350;
+        --text:        #e8ecf1;
+        --text-dim:    #9aa4b2;
+        --accent:      #ff7a59;
+        --accent-2:    #ff8e72;
+        --accent-3:    #ff5fae;
+        --ok:          #3ecf8e;
+        --err:         #ff5c5c;
+        --glow:        none;
+        --radius:      14px;
+        --radius-lg:   18px;
+        --font-mono:   inherit;
+      }
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    /* =========================================================
+       全局背景：移动端径向渐变 + 微弱星点
+       ========================================================= */
+    html, body {
+      margin: 0; padding: 0;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+                   "Helvetica Neue", "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overscroll-behavior-y: contain;
+      background: var(--bg-1);
+    }
+    @media (max-width: 768px) {
+      body {
+        background:
+          radial-gradient(1200px 800px at 80% -10%, rgba(124, 77, 255, 0.25), transparent 60%),
+          radial-gradient(900px 700px at -10% 110%, rgba(0, 229, 255, 0.22), transparent 60%),
+          linear-gradient(180deg, var(--bg-0), var(--bg-1) 40%, var(--bg-2));
+        background-attachment: fixed;
+      }
+    }
+
+    /* 配置警告横幅（占位符 / URL 不可达） */
+    .config-banner {
+      max-width: 560px;
+      margin: 16px auto 0;
+      padding: 16px 20px;
+      background: rgba(255, 92, 122, 0.12);
+      border: 1px solid rgba(255, 92, 122, 0.45);
+      border-radius: var(--radius);
+      color: #ffd5dd;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .config-banner-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #ff8a99;
+    }
+    .config-banner-body p { margin: 6px 0; }
+    .config-banner code {
+      background: rgba(0,0,0,0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #ffd5dd;
+    }
+    .config-banner a { color: #ffb0bc; text-decoration: underline; }
+
+    /* 容器 */
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 16px 16px 110px;
+    }
+    @media (min-width: 769px) {
+      .app { max-width: 640px; padding: 28px 24px 80px; }
+    }
+
+    /* =========================================================
+       顶部栏 —— 移动端毛玻璃 + 发光齿轮
+       ========================================================= */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 6px 0 2px;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+    @media (max-width: 768px) {
+      h1 {
+        background: linear-gradient(90deg, #fff 0%, var(--accent) 50%, var(--accent-2) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+      }
+    }
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .welcome-hint {
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      background: rgba(255, 209, 102, 0.1);
+      border: 1px solid rgba(255, 209, 102, 0.4);
+      border-radius: 12px;
+      color: #ffd166;
+      font-size: 13px;
+      text-align: center;
+      animation: welcomeFade 8s ease-in-out forwards;
+    }
+    @keyframes welcomeFade {
+      0%   { opacity: 0; transform: translateY(-6px); }
+      10%  { opacity: 1; transform: translateY(0); }
+      85%  { opacity: 1; }
+      100% { opacity: 0.35; }
+    }
+    .icon-btn {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text);
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+    .icon-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+    .icon-btn svg { width: 20px; height: 20px; }
+    @media (max-width: 768px) {
+      .icon-btn {
+        box-shadow: 0 0 18px rgba(0, 229, 255, 0.15), inset 0 0 12px rgba(0, 229, 255, 0.08);
+        color: var(--accent);
+      }
+      .icon-btn:hover {
+        box-shadow: 0 0 24px rgba(0, 229, 255, 0.45), inset 0 0 12px rgba(0, 229, 255, 0.15);
+      }
+    }
+
+    /* =========================================================
+       状态栏 —— 移动端显示为胶囊
+       ========================================================= */
+    .status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      margin-bottom: var(--gap, 14px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .status .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #888;
+      box-shadow: 0 0 8px currentColor;
+    }
+    .status.ok .dot   { background: var(--ok); color: var(--ok); }
+    .status.err .dot  { background: var(--err); color: var(--err); }
+    .status.pending .dot { background: #f5c451; color: #f5c451; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @media (max-width: 768px) {
+      .status { font-family: var(--font-mono); letter-spacing: 0.4px; }
+    }
+
+    /* 拒绝定位的横幅 */
+    .banner {
+      display: none;
+      padding: 12px 14px;
+      background: rgba(255, 92, 122, 0.12);
+      border: 1px solid rgba(255, 92, 122, 0.45);
+      color: #ffd5dd;
+      border-radius: var(--radius);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .banner.show { display: block; }
+
+    /* =========================================================
+       输入区 —— 移动端：玻璃拟态 + 霓虹聚焦
+       ========================================================= */
+    .composer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    @media (max-width: 768px) {
+      .composer {
+        box-shadow:
+          0 8px 40px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+    }
+    .me-line {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .me-line .badge {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    @media (max-width: 768px) {
+      .me-line { font-family: var(--font-mono); letter-spacing: 0.3px; }
+    }
+    textarea#content {
+      width: 100%;
+      min-height: 88px;
+      resize: none;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    textarea#content:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+    }
+    textarea#content:disabled { opacity: 0.5; }
+
+    .composer-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 12px; gap: 10px;
+    }
+    .hint {
+      font-size: 12px; color: var(--text-dim);
+      min-height: 18px;
+    }
+    .hint.ok  { color: var(--ok); }
+    .hint.err { color: var(--err); }
+
+    /* =========================================================
+       主按钮 —— 移动端：圆形 + 脉冲 + 渐变描边
+       桌面端：胶囊按钮（保留原本视觉）
+       ========================================================= */
+    button.primary {
+      background: var(--accent);
+      color: #001018;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    button.primary:hover  { filter: brightness(1.08); }
+    button.primary:active { transform: scale(0.96); }
+    button.primary:disabled {
+      background: #4a4f57; color: #aaa; cursor: not-allowed; opacity: 0.6;
+    }
+
+    @media (max-width: 768px) {
+      button.primary {
+        position: relative;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+        color: #fff;
+        width: 52px; height: 52px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        box-shadow:
+          0 0 0 2px rgba(0, 229, 255, 0.25) inset,
+          0 0 20px rgba(0, 229, 255, 0.45),
+          0 4px 16px rgba(124, 77, 255, 0.35);
+      }
+      button.primary::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 229, 255, 0.35);
+        opacity: 0;
+        animation: ripple 2.4s ease-out infinite;
+      }
+      @keyframes ripple {
+        0%   { transform: scale(0.9); opacity: 0.7; }
+        100% { transform: scale(1.4); opacity: 0; }
+      }
+      button.primary svg { width: 22px; height: 22px; }
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button.ghost:hover { color: var(--text); border-color: var(--text-dim); }
+
+    /* =========================================================
+       列表
+       ========================================================= */
+    .list-header {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text-dim);
+      margin: 10px 4px 12px;
+      letter-spacing: 0.4px;
+    }
+    @media (max-width: 768px) {
+      .list-header {
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        font-size: 11px;
+      }
+      .list-header::before {
+        content: '';
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+        animation: pulse 1.6s ease-in-out infinite;
+      }
+    }
+    .encounters { display: flex; flex-direction: column; gap: 12px; }
+
+    /* =========================================================
+       星空视图（替代卡片列表）
+       ========================================================= */
+    .starfield {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 220px);
+      min-height: 360px;
+      overflow: hidden;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      background:
+        radial-gradient(800px 600px at 80% -10%, rgba(124,77,255,0.18), transparent 60%),
+        radial-gradient(700px 500px at -10% 110%, rgba(0,229,255,0.16), transparent 60%),
+        linear-gradient(180deg, rgba(5,8,16,0.4), rgba(10,14,26,0.6));
+      border: 1px solid var(--border);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    @media (min-width: 769px) {
+      .starfield {
+        height: calc(100vh - 260px);
+        min-height: 480px;
+      }
+    }
+
+    /* 星云 */
+    .nebula {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .nebula-1 { width: 360px; height: 360px; background: radial-gradient(circle, rgba(124,77,255,0.35), transparent 70%); top: 8%;  left: -8%; }
+    .nebula-2 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(0,229,255,0.28),  transparent 70%); bottom: 12%; right: -6%; }
+    .nebula-3 { width: 220px; height: 220px; background: radial-gradient(circle, rgba(255,95,174,0.18), transparent 70%); top: 48%; left: 38%; }
+
+    /* 星点层（box-shadow 一次性绘制，GPU 友好） */
+    .stars-layer {
+      position: absolute;
+      inset: -20px;
+      pointer-events: none;
+      animation: starDrift 60s ease-in-out infinite alternate;
+    }
+    .stars-layer-2 {
+      animation-duration: 90s;
+      animation-direction: alternate-reverse;
+      opacity: 0.65;
+    }
+    @keyframes starDrift {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(20px, -15px); }
+    }
+
+    /* 中央光晕（用户定位点） */
+    .center-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(0,229,255,0.55) 0%, rgba(0,229,255,0.18) 40%, transparent 70%);
+      box-shadow: 0 0 40px rgba(0,229,255,0.5);
+      animation: glowPulse 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .center-glow::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 8px; height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px #fff, 0 0 24px var(--accent);
+    }
+    @keyframes glowPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.7; }
+      50%      { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    }
+    .center-label {
+      position: absolute;
+      top: calc(50% + 50px); left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      pointer-events: none;
+      font-family: var(--font-mono);
+    }
+
+    /* 头像星星 */
+    .star-avatar {
+      position: absolute;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--surface-2);
+      border: 1.5px solid rgba(0, 229, 255, 0.5);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      box-shadow: 0 0 12px rgba(0,229,255,0.3);
+      will-change: transform;
+      touch-action: manipulation; /* 禁止双击缩放 / 300ms 延迟，避免 click 不稳 */
+      -webkit-tap-highlight-color: transparent;
+    }
+    .star-avatar .init { font-size: inherit; line-height: 1; }
+    .star-avatar .img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .star-avatar:hover {
+      transform: translate(-50%, -50%) scale(1.15);
+      z-index: 60 !important;
+    }
+    .star-avatar.lvl-near {
+      border-color: rgba(0, 229, 255, 0.9);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.7), 0 0 40px rgba(0, 229, 255, 0.3);
+    }
+    .star-avatar.lvl-mid {
+      border-color: rgba(124, 77, 255, 0.7);
+      box-shadow: 0 0 14px rgba(124, 77, 255, 0.5);
+    }
+    .star-avatar.lvl-far {
+      border-color: rgba(120, 160, 255, 0.4);
+      box-shadow: 0 0 8px rgba(120, 160, 255, 0.3);
+    }
+
+    /* 导览账号 universal —— 脉动光环提示用户点击 */
+    .star-avatar.is-guide {
+      animation: guidePulse 2s ease-in-out infinite;
+    }
+    @keyframes guidePulse {
+      0%, 100% { box-shadow: 0 0 14px rgba(255, 209, 102, 0.4), 0 0 30px rgba(255, 209, 102, 0.2); }
+      50%      { box-shadow: 0 0 22px rgba(255, 209, 102, 0.9), 0 0 50px rgba(255, 209, 102, 0.4); }
+    }
+    .star-bubble.guide-hint {
+      border-color: rgba(255, 209, 102, 0.7);
+      animation: guideHintWiggle 1.6s ease-in-out infinite;
+    }
+    .star-bubble.guide-hint::after {
+      border-right-color: rgba(255, 209, 102, 0.7);
+      border-bottom-color: rgba(255, 209, 102, 0.7);
+    }
+    @keyframes guideHintWiggle {
+      0%, 100% { transform: translate(-50%, calc(-100% - 18px)); }
+      50%      { transform: translate(-50%, calc(-100% - 24px)); }
+    }
+    .guide-tag {
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: rgba(255, 209, 102, 0.18);
+      border: 1px solid rgba(255, 209, 102, 0.5);
+      border-radius: 8px;
+      color: #ffd166;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      animation: guideTagPulse 1.4s ease-in-out infinite;
+    }
+    @keyframes guideTagPulse {
+      0%, 100% { opacity: 0.7; }
+      50%      { opacity: 1; }
+    }
+
+    /* 浮动气泡 */
+    .star-bubble {
+      position: absolute;
+      max-width: 200px;
+      padding: 8px 12px;
+      background: rgba(10, 14, 26, 0.92);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      border-radius: 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transform: translate(-50%, calc(-100% - 14px));
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s, transform 0.18s;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    @media (max-width: 768px) {
+      .star-bubble {
+        max-width: 240px;
+        padding: 10px 14px;
+      }
+      .star-bubble .bubble-nick { font-size: 13px; }
+      .star-bubble .bubble-meta { font-size: 11px; }
+      .star-bubble .bubble-body { font-size: 12px; -webkit-line-clamp: 4; }
+    }
+    .star-bubble.show {
+      opacity: 1;
+      transform: translate(-50%, calc(-100% - 18px));
+    }
+    .star-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 10px; height: 10px;
+      background: rgba(10, 14, 26, 0.92);
+      border-right: 1px solid rgba(0, 229, 255, 0.4);
+      border-bottom: 1px solid rgba(0, 229, 255, 0.4);
+    }
+    .bubble-nick {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+    .bubble-meta {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.3px;
+    }
+    .bubble-body {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    /* 流星 */
+    .meteor {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 4px #fff;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .meteor::before {
+      content: '';
+      position: absolute;
+      top: 50%; right: 100%;
+      width: 80px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8));
+      transform: translateY(-50%);
+    }
+    @keyframes shoot {
+      0%   { opacity: 0; transform: translate(0,0) rotate(-45deg); }
+      10%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(300px, 300px) rotate(-45deg); }
+    }
+
+    /* 卡片 */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      animation: fade-in 0.3s ease both;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    @media (max-width: 768px) {
+      .card {
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.35),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, var(--accent), var(--accent-2));
+        box-shadow: 0 0 10px var(--accent);
+      }
+    }
+    .card .head {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 4px;
+    }
+    .card .nick {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.2px;
+    }
+    .card .bio {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .card .meta {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 6px;
+    }
+    @media (max-width: 768px) {
+      .card .meta { font-family: var(--font-mono); letter-spacing: 0.3px; }
+    }
+    .card .body {
+      font-size: 15px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    /* 卡片底部链接 chip 区 */
+    .card .links {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: 10px;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px 4px 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      max-width: 100%;
+    }
+    .chip:hover {
+      border-color: var(--border-strong);
+      color: var(--accent);
+    }
+    @media (max-width: 768px) {
+      .chip {
+        background: rgba(0, 229, 255, 0.08);
+        border-color: rgba(0, 229, 255, 0.25);
+      }
+      .chip:hover {
+        background: rgba(0, 229, 255, 0.18);
+        box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+      }
+    }
+    .chip svg {
+      width: 12px; height: 12px; flex: 0 0 12px;
+      stroke-width: 2;
+    }
+    .chip .chip-text {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 180px;
+    }
+    .chip.wechat  svg { color: #07c160; }
+    .chip.xhs     svg { color: #ff2442; }
+    .chip.douyin  svg { color: #fe2c55; }
+    .chip.website svg { color: var(--accent); }
+    .chip.other   svg { color: var(--text-dim); }
+    @media (max-width: 768px) {
+      .chip.wechat svg, .chip.xhs svg, .chip.douyin svg { color: #fff; }
+    }
+
+    /* 链接编辑器（设置 / 新手引导里用） */
+    .links-editor {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-top: 4px;
+    }
+    .link-row {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .link-row select {
+      flex: 0 0 auto;
+      width: 96px;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+        linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+      background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+    .link-row input {
+      flex: 1 1 auto;
+      min-width: 0;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .link-row input.label-input {
+      flex: 1 1 120px;
+      max-width: 160px;
+    }
+    .link-row input:focus,
+    .link-row select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+    }
+    .link-row .del {
+      flex: 0 0 auto;
+      width: 34px; height: 34px;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .link-row .del:hover { color: var(--err); border-color: var(--err); }
+    .link-row .del svg { width: 14px; height: 14px; }
+    @media (max-width: 480px) {
+      .link-row { flex-wrap: wrap; }
+      .link-row input.url-input { flex: 1 1 100%; }
+      .link-row input.label-input { flex: 1 1 auto; max-width: none; }
+      .link-row .del { margin-left: auto; }
+    }
+    .add-link {
+      margin-top: 4px;
+      background: transparent;
+      color: var(--accent);
+      border: 1px dashed var(--border-strong);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .add-link:hover { background: var(--surface-2); }
+    .add-link svg { width: 14px; height: 14px; }
+
+    /* 链接 section 标题 */
+    .section-title {
+      display: block;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin: 14px 0 6px;
+    }
+
+    /* =========================================================
+       标签编辑器（onboarding / settings 通用）
+       ========================================================= */
+    .tags-editor {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      align-items: center;
+    }
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 11px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .tag-chip:hover { border-color: var(--border-strong); }
+    .tag-chip.on {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(124, 77, 255, 0.25));
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    @media (max-width: 768px) {
+      .tag-chip.on {
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
+      }
+    }
+    .tag-chip .x {
+      font-size: 10px; opacity: 0.6;
+      margin-left: 2px;
+    }
+    .tag-custom {
+      flex: 1 1 100px;
+      min-width: 80px;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px dashed var(--border-strong);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .tag-custom:focus { border-style: solid; border-color: var(--accent); }
+
+    /* 标签的 items 子编辑器（折叠在 chip 行下方） */
+    .tag-items {
+      flex: 1 1 100%;
+      display: none;
+      margin: 4px 0 6px;
+      padding: 8px 10px;
+      background: var(--surface-2);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+    .tag-items.open { display: block; }
+    .tag-items-head {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+      font-size: 12px; color: var(--text-dim);
+      user-select: none;
+    }
+    .tag-items-name { color: var(--text); font-weight: 600; }
+    .tag-items-toggle { transition: transform 0.15s ease; }
+    .tag-items.open .tag-items-toggle { transform: rotate(180deg); }
+    .tag-items-body {
+      display: none;
+      flex-wrap: wrap; gap: 6px;
+      margin-top: 6px;
+    }
+    .tag-items.open .tag-items-body { display: flex; }
+    .tag-item-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 8px 4px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px; color: var(--text);
+    }
+    .tag-item-chip button {
+      background: transparent; border: none; color: var(--text-dim);
+      cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+    }
+    .tag-item-chip button:hover { color: var(--err); }
+    .tag-items-input-row {
+      display: flex; gap: 6px; width: 100%;
+      margin-top: 6px;
+    }
+    .tag-items-input-row input {
+      flex: 1 1 auto; min-width: 0;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .tag-items-input-row input:focus { border-color: var(--accent); }
+    .tag-items-input-row button {
+      flex: 0 0 auto;
+      padding: 6px 12px;
+      background: var(--accent);
+      color: #001018;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* 卡片上的标签 chips */
+    .card .tags {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      margin-top: 8px;
+    }
+    .card .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-dim);
+    }
+    @media (max-width: 768px) {
+      .card .tag {
+        background: rgba(0, 229, 255, 0.06);
+        border-color: rgba(0, 229, 255, 0.2);
+        color: var(--accent);
+        font-family: var(--font-mono);
+      }
+    }
+
+    /* =========================================================
+       头像
+       ========================================================= */
+    .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      overflow: hidden;
+      flex: 0 0 auto;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+    }
+    .avatar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(0, 229, 255, 0.4);
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .avatar.lg { width: 72px; height: 72px; font-size: 28px; }
+    .avatar.xl { width: 96px; height: 96px; font-size: 36px; }
+    @media (max-width: 768px) {
+      .avatar { box-shadow: 0 0 12px rgba(0, 229, 255, 0.2); }
+      .avatar:hover { box-shadow: 0 0 0 2px var(--accent), 0 0 24px rgba(0, 229, 255, 0.5); }
+    }
+
+    /* 卡片头部：头像 + 昵称 */
+    .card .head-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .card .head-text { flex: 1 1 auto; min-width: 0; }
+    .card .head {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 0;
+    }
+
+    /* =========================================================
+       个人主页弹层
+       ========================================================= */
+    .profile-modal .modal {
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .profile-hero {
+      display: flex; align-items: center; gap: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .profile-hero .name { font-size: 18px; font-weight: 700; }
+    .profile-hero .bio { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+    .profile-section { margin-bottom: 14px; }
+    .profile-section h4 {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin: 0 0 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+    .profile-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .profile-links { display: flex; flex-direction: column; gap: 6px; }
+    .profile-link {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.15s ease;
+    }
+    .profile-link:hover { border-color: var(--border-strong); color: var(--accent); }
+    .profile-link svg { width: 14px; height: 14px; flex: 0 0 14px; }
+    .profile-link .url { color: var(--text-dim); font-size: 11px; margin-left: auto; }
+
+    .profile-msgs { display: flex; flex-direction: column; gap: 8px; }
+    .profile-msg {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    .profile-msg .meta { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+    .profile-empty { font-size: 13px; color: var(--text-dim); text-align: center; padding: 12px; }
+
+    /* =========================================================
+       调试面板（浮动）
+       ========================================================= */
+    .debug-panel {
+      position: fixed;
+      right: 12px; bottom: 12px;
+      width: 320px; max-width: calc(100vw - 24px);
+      max-height: 70vh;
+      overflow-y: auto;
+      background: var(--surface-strong);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 12px;
+      z-index: 150;
+      display: none;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      font-family: var(--font-mono);
+    }
+    .debug-panel.show { display: block; }
+    .debug-panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .debug-panel h3 button {
+      background: transparent; border: none; color: var(--text-dim);
+      cursor: pointer; font-size: 16px; padding: 0 4px;
+    }
+    .debug-panel .row {
+      display: flex; justify-content: space-between; gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      word-break: break-all;
+    }
+    .debug-panel .row:last-child { border-bottom: none; }
+    .debug-panel .row .k { color: var(--text-dim); flex: 0 0 auto; }
+    .debug-panel .row .v { color: var(--text); text-align: right; min-width: 0; }
+    .debug-panel .actions {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: 10px;
+    }
+    .debug-panel button.action {
+      flex: 1 1 auto;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .debug-panel button.action:hover { border-color: var(--accent); color: var(--accent); }
+    .debug-panel button.action.danger { color: var(--err); }
+    .debug-panel .err-box {
+      background: rgba(255, 92, 122, 0.1);
+      border: 1px solid rgba(255, 92, 122, 0.3);
+      color: #ffd5dd;
+      padding: 8px;
+      border-radius: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+      word-break: break-all;
+      white-space: pre-wrap;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .debug-panel .preset-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      margin-top: 6px;
+    }
+    .debug-panel label.switch {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+
+    /* 空状态 */
+    .empty {
+      text-align: center;
+      color: var(--text-dim);
+      padding: 40px 16px;
+      font-size: 14px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+    @media (max-width: 768px) {
+      .empty {
+        background: var(--surface);
+        backdrop-filter: blur(8px);
+      }
+    }
+
+    /* 网络警告 */
+    .net-warn {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      padding: 10px;
+      margin-top: 12px;
+      display: none;
+    }
+    .net-warn.show { display: block; }
+    @media (max-width: 768px) {
+      .net-warn { font-family: var(--font-mono); }
+    }
+
+    /* =========================================================
+       模态 —— 移动端为底部弹层（自下而上滑入），
+       桌面端保持居中卡片
+       ========================================================= */
+    .modal-mask {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 20px;
+      z-index: 100;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .modal-mask.show { display: flex; }
+    .modal {
+      background: var(--surface-strong);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 420px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding: 22px;
+      animation: pop 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal h2 {
+      margin: 0 0 6px;
+      font-size: 19px;
+    }
+    @media (max-width: 768px) {
+      .modal h2 {
+        background: linear-gradient(90deg, #fff, var(--accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+    }
+    .modal p.muted {
+      margin: 0 0 16px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+    }
+    .field textarea { resize: none; min-height: 80px; }
+    .field .counter {
+      text-align: right;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 4px;
+      font-family: var(--font-mono);
+    }
+    .modal-actions {
+      display: flex; justify-content: flex-end; gap: 10px;
+      margin-top: 10px;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 6px;
+    }
+    .modal-close {
+      width: 32px; height: 32px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 999px;
+      font-size: 20px; line-height: 1;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto;
+      padding: 0;
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--border-strong); }
+    .modal .err {
+      color: var(--err);
+      font-size: 12px;
+      min-height: 16px;
+      margin-bottom: 6px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 移动端模态：从底部弹出 */
+    @media (max-width: 768px) {
+      .modal-mask {
+        align-items: flex-end;
+        padding: 0;
+        /* 留出顶部状态栏/导航条的空间，可点关闭 */
+      }
+      .modal-mask::before {
+        content: '';
+        flex: 1 1 auto;
+        min-height: 40px;
+        cursor: pointer;
+      }
+      .modal {
+        max-width: 100%;
+        flex: 0 0 auto;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 24px 24px 0 0;
+        padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
+        animation: slide-up 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+      }
+      @keyframes slide-up {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0); }
+      }
+      /* 顶部拖拽指示条 */
+      .modal::before {
+        content: '';
+        display: block;
+        width: 40px; height: 4px;
+        background: var(--border-strong);
+        border-radius: 2px;
+        margin: -8px auto 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 配置警告：占位符 / 项目不可达 -->
+<div id="configBanner" class="config-banner" style="display:none">
+  <div class="config-banner-title" data-i18n="config.title">⚠️ 还没配置 Supabase</div>
+  <div class="config-banner-body">
+    <p><span data-i18n="config.body1" data-i18n-params='{"line":1133}'>打开 index.html，找到第 1133 行附近的 CONFIG，把 URL 和 key 换成你自己的。</span></p>
+    <p><span data-i18n="config.body2">凭证在 supabase.com/dashboard → 选你的项目 → Settings → API 复制。</span> <a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a></p>
+  </div>
+</div>
+
+<main class="app">
+  <div class="topbar">
+    <h1 data-i18n="app.title">近场偶遇</h1>
+    <button id="settingsBtn" class="icon-btn" data-i18n-aria="common.settings" data-i18n-title="common.settings" title="设置" aria-label="设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
+  <div class="subtitle" data-i18n="app.subtitle">看见 100 米内、5 分钟内擦肩而过的人</div>
+  <div id="welcomeHint" class="welcome-hint" style="display:none" data-i18n="app.welcome">
+    ✨ 欢迎来到近场偶遇 —— 找找那颗发光的星，那是你的指路人
+  </div>
+
+  <div id="status" class="status pending" role="status" aria-live="polite">
+    <span class="dot"></span><span id="statusText" data-i18n="status.locating">正在获取定位...</span>
+  </div>
+
+  <div id="banner" class="banner" data-i18n="banner.locationDenied">定位被拒绝，页面无法使用。请刷新并允许定位。</div>
+
+  <section class="composer" data-i18n-aria="composer.btn" aria-label="留下足迹">
+    <div id="meLine" class="me-line" style="display:none" data-i18n="me.line">
+      以 <span id="meName" class="badge"></span> 的身份留下足迹
+    </div>
+    <textarea
+      id="content"
+      placeholder="此刻，你想说什么？"
+      data-i18n-ph="composer.placeholder"
+      autocomplete="off"
+    ></textarea>
+    <div class="composer-row">
+      <div id="hint" class="hint" data-i18n="composer.hint">说点什么吧</div>
+      <!-- 按钮：移动端是圆形"发射"图标，桌面端是胶囊文字按钮 -->
+      <button id="submitBtn" class="primary" data-i18n-aria="composer.btn" aria-label="留下足迹">
+        <span class="btn-text" data-i18n="composer.btn">留下足迹</span>
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M22 2 11 13"/>
+          <path d="M22 2 15 22 11 13 2 9 22 2z"/>
+        </svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- 星空容器（替代原来的 #list 卡片列表） -->
+  <div class="list-header" data-i18n="list.header">附近 100 米 · 最近 5 分钟</div>
+  <div id="starfield" class="starfield" aria-live="polite">
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    <div class="nebula nebula-3"></div>
+    <div class="stars-layer" id="starsL1"></div>
+    <div class="stars-layer stars-layer-2" id="starsL2"></div>
+    <div class="center-glow"></div>
+    <div class="center-label">YOU</div>
+    <div id="meteors"></div>
+  </div>
+  <div id="empty" class="empty" style="display:none">
+    <div data-i18n="list.empty">此刻，这里静悄悄... 你是第一个留下足迹的人吗？</div>
+    <div id="emptyHint" style="margin-top:8px;font-size:11px;line-height:1.6;color:var(--text-dim);white-space:pre-line" data-i18n="list.emptyHint"></div>
+  </div>
+  <div id="netWarn" class="net-warn" data-i18n="banner.networkRetry">网络波动，正在重试...</div>
+</main>
+
+<!-- 新手引导 -->
+<div id="onboardMask" class="modal-mask" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2 data-i18n="onboard.title">欢迎来到近场偶遇</h2>
+    <p class="muted" data-i18n="onboard.subtitle">留下一个称呼和一句话介绍，让大家认识此刻的你。</p>
+    <div class="err" id="onboardErr"></div>
+    <div class="field">
+      <label for="onboardNick" data-i18n="onboard.nickLabel">昵称（必填）</label>
+      <input id="onboardNick" placeholder="例如：路过的咖啡客" data-i18n-ph="onboard.nickPh" />
+    </div>
+    <div class="field">
+      <label for="onboardBio" data-i18n="onboard.bioLabel">自我介绍（选填）</label>
+      <textarea id="onboardBio" placeholder="一句话告诉大家你是谁" data-i18n-ph="onboard.bioPh"></textarea>
+      <div class="counter"><span id="onboardBioCount">0</span> <span id="onboardBioCountUnit" data-i18n-unit>字</span></div>
+    </div>
+
+    <span class="section-title" data-i18n="onboard.tagsTitle" data-i18n-params='{"max":8}'>爱好标签（选填，最多 8 个）</span>
+    <p class="muted" style="font-size:11px;margin:-2px 0 6px" data-i18n="onboard.tagsHint">点选后可填写具体喜欢的内容（如电影名）</p>
+    <div class="tags-editor" id="onboardTags"></div>
+
+    <span class="section-title" data-i18n="onboard.linksTitle">联系方式（选填）</span>
+    <div class="links-editor" id="onboardLinks"></div>
+    <button type="button" class="add-link" data-target="onboardLinks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span data-i18n="onboard.addLink">添加一个链接</span>
+    </button>
+
+    <div class="modal-actions">
+      <button id="onboardSave" class="primary">
+        <span class="btn-text" data-i18n="common.start">开始</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 设置 -->
+<div id="settingsMask" class="modal-mask" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 data-i18n="settings.title" style="margin:0">设置</h2>
+      <button type="button" id="settingsCloseX" class="modal-close" data-i18n-aria="common.close" aria-label="关闭" title="关闭">×</button>
+    </div>
+    <p class="muted" data-i18n="settings.subtitle">修改后，新的足迹会使用最新身份。</p>
+    <div class="err" id="settingsErr"></div>
+
+    <!-- 语言切换 -->
+    <span class="section-title" data-i18n="settings.language">语言</span>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button type="button" class="ghost lang-btn" data-lang="zh" id="langBtnZh" style="font-size:13px;padding:6px 14px;flex:1">
+        <span data-i18n="settings.langZh">中文</span>
+      </button>
+      <button type="button" class="ghost lang-btn" data-lang="en" id="langBtnEn" style="font-size:13px;padding:6px 14px;flex:1">
+        <span data-i18n="settings.langEn">English</span>
+      </button>
+    </div>
+
+    <!-- 头像 -->
+    <div class="avatar-row" style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div id="settingsAvatarPreview" class="avatar lg"></div>
+      <div style="flex:1 1 auto">
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:6px" data-i18n="settings.avatarHint">点击头像上传（≤2 MB）</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" id="settingsUploadBtn" class="ghost" style="font-size:12px;padding:6px 12px" data-i18n="settings.uploadAvatar">上传头像</button>
+          <button type="button" id="settingsRemoveAvatarBtn" class="ghost" style="font-size:12px;padding:6px 12px;display:none" data-i18n="settings.removeAvatar">移除头像</button>
+          <input type="file" id="settingsAvatarFile" accept="image/jpeg,image/png,image/webp" style="display:none" />
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="settingsNick" data-i18n="settings.nickLabel">昵称</label>
+      <input id="settingsNick" />
+    </div>
+    <div class="field">
+      <label for="settingsBio" data-i18n="settings.bioLabel">自我介绍</label>
+      <textarea id="settingsBio"></textarea>
+      <div class="counter"><span id="settingsBioCount">0</span> <span id="settingsBioCountUnit" data-i18n-unit>字</span></div>
+    </div>
+
+    <span class="section-title" data-i18n="settings.tagsTitle" data-i18n-params='{"max":8}'>爱好标签（选填，最多 8 个）</span>
+    <p class="muted" style="font-size:11px;margin:-2px 0 6px" data-i18n="settings.tagsHint">点选后可填写具体喜欢的内容（如电影名）</p>
+    <div class="tags-editor" id="settingsTags"></div>
+
+    <span class="section-title" data-i18n="settings.linksTitle">联系方式</span>
+    <div class="links-editor" id="settingsLinks"></div>
+    <button type="button" class="add-link" data-target="settingsLinks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span data-i18n="settings.addLink">添加一个链接</span>
+    </button>
+
+    <div class="modal-actions">
+      <button id="settingsClose" class="ghost" data-i18n="common.cancel">取消</button>
+      <button id="settingsSave" class="primary">
+        <span class="btn-text" data-i18n="common.save">保存</span>
+      </button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:18px 0 12px" />
+
+    <span class="section-title" data-i18n="settings.account">账号</span>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+      <button type="button" id="settingsLogout" class="ghost" style="width:100%" data-i18n="settings.logout">
+        退出当前账号（清除本地身份，重新登录）
+      </button>
+      <button type="button" id="settingsResetGuide" class="ghost" style="width:100%" data-i18n="settings.resetGuide">
+        重新显示导览账号 universal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 个人主页弹层（点击别人头像打开） -->
+<div id="profileMask" class="modal-mask profile-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 data-i18n="profile.title" style="margin:0">个人主页</h2>
+      <button type="button" id="profileCloseX" class="modal-close" data-i18n-aria="common.close" aria-label="关闭" title="关闭">×</button>
+    </div>
+    <div id="profileContent">
+      <div class="profile-empty" data-i18n="profile.loading">加载中...</div>
+    </div>
+    <div class="modal-actions">
+      <button id="profileClose" class="primary"><span class="btn-text" data-i18n="profile.close">关闭</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 调试面板（默认隐藏） ====== -->
+<div id="debugPanel" class="debug-panel" data-i18n-aria="debug.title" aria-label="调试面板">
+  <h3>
+    <span data-i18n="debug.title">🛠 调试面板</span>
+    <button id="debugClose" data-i18n-aria="common.close" aria-label="关闭">×</button>
+  </h3>
+
+  <div class="row"><span class="k" data-i18n="debug.sid">会话 ID</span><span class="v" id="dbgSid"></span></div>
+  <div class="row"><span class="k" data-i18n="debug.url">Supabase</span><span class="v" id="dbgUrl"></span></div>
+  <div class="row"><span class="k" data-i18n="debug.locState">定位状态</span><span class="v" id="dbgLocState"></span></div>
+  <div class="row"><span class="k" data-i18n="debug.loc">当前坐标</span><span class="v" id="dbgLoc"></span></div>
+  <div class="row"><span class="k" data-i18n="debug.profile">Profile</span><span class="v" id="dbgProfile"></span></div>
+  <div class="row"><span class="k" data-i18n="debug.lastFetch">最近一次拉取</span><span class="v" id="dbgLastFetch"></span></div>
+
+  <div id="dbgErr" class="err-box" style="display:none"></div>
+
+  <div class="section-title" style="margin-top:12px" data-i18n="debug.locationPresets">模拟位置</div>
+  <div class="preset-grid">
+    <button class="action" data-loc="real" data-i18n="loc.real">使用真实定位</button>
+    <button class="action" data-loc="beijing" data-i18n="loc.beijing">北京天安门</button>
+    <button class="action" data-loc="shanghai" data-i18n="loc.shanghai">上海外滩</button>
+    <button class="action" data-loc="tokyo" data-i18n="loc.tokyo">东京涩谷</button>
+  </div>
+
+  <div class="section-title" style="margin-top:12px" data-i18n="debug.options">选项</div>
+  <label class="switch">
+    <input type="checkbox" id="dbgNoSelfIso" />
+    <span data-i18n="debug.noSelfIso">禁用自我隔离（能看见自己的留言）</span>
+  </label>
+
+  <div class="section-title" style="margin-top:12px" data-i18n="debug.rangeTitle">附近范围</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px" id="dbgRadiusBtns">
+    <button class="action" data-radius="100">100m</button>
+    <button class="action" data-radius="300">300m</button>
+    <button class="action" data-radius="1000">1km</button>
+    <button class="action" data-radius="5000">5km</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="dbgWindowBtns">
+    <button class="action" data-window="5">5min</button>
+    <button class="action" data-window="30">30min</button>
+    <button class="action" data-window="60">1h</button>
+    <button class="action" data-window="1440">24h</button>
+  </div>
+  <div style="margin-top:4px;color:var(--text-dim);font-size:10px" data-i18n="debug.rangeHint">
+    调整后只对本设备本次刷新生效；不写入云端。
+  </div>
+
+  <div class="actions" style="margin-top:10px">
+    <button class="action" id="dbgRefresh" data-i18n="debug.refresh">手动刷新</button>
+    <button class="action" id="dbgCopySid" data-i18n="debug.copySid">复制 SID</button>
+    <button class="action" id="dbgClear" data-i18n="debug.clear">清空 localStorage</button>
+  </div>
+
+  <div style="margin-top:8px;color:var(--text-dim);font-size:10px;line-height:1.4" data-i18n="debug.guideHint">
+    提示：桌面端长按齿轮 1 秒；移动端连点齿轮 5 次。
+  </div>
+</div>
+
+<script>
+  /* ============================================================
+     0. i18n —— 中英文文案
+     ============================================================ */
+  const I18N = {
+    zh: {
+      // 通用
+      'app.title': '近场偶遇',
+      'app.docTitle': '近场偶遇 · 5 分钟时空胶囊',
+      'app.subtitle': '看见 100 米内、5 分钟内擦肩而过的人',
+      'app.welcome': '✨ 欢迎来到近场偶遇 —— 找找那颗发光的星，那是你的指路人',
+      'common.settings': '设置',
+      'common.cancel': '取消',
+      'common.save': '保存',
+      'common.start': '开始',
+      'common.confirm': '确定',
+      'common.close': '关闭',
+      // 状态
+      'status.locating': '正在获取定位...',
+      'status.ok': '定位成功 ✓',
+      'status.denied': '定位失败，请允许浏览器权限',
+      'status.error': '当前设备不支持定位',
+      'banner.locationDenied': '定位被拒绝，页面无法使用。请刷新并允许定位。',
+      'banner.networkRetry': '网络波动，正在重试...',
+      // 顶部 / 撰写区
+      'me.line': '以 {name} 的身份留下足迹',
+      'composer.placeholder': '此刻，你想说什么？',
+      'composer.hint': '说点什么吧',
+      'composer.charCount': '{n} 字',
+      'composer.sending': '正在发送...',
+      'composer.sent': '✅ 已发送',
+      'composer.sendFailed': '发送失败：{msg}',
+      'composer.sendFailedShort': '发送失败，请稍后再试',
+      'composer.locatingWait': '定位中，请稍后...',
+      'composer.empty': '请说点什么',
+      'composer.btn': '留下足迹',
+      // 列表
+      'list.header': '附近 100 米 · 最近 5 分钟',
+      'list.empty': '此刻，这里静悄悄... 你是第一个留下足迹的人吗？',
+      'list.emptyHint': '附近 {radius}m · 最近 {window}min 内 0 条记录。\n让朋友在同一地点发一条试试；还看不到？长按齿轮打开调试面板拉大范围。',
+      // 引导弹层
+      'onboard.title': '欢迎来到近场偶遇',
+      'onboard.subtitle': '留下一个称呼和一句话介绍，让大家认识此刻的你。',
+      'onboard.nickLabel': '昵称（必填）',
+      'onboard.nickPh': '例如：路过的咖啡客',
+      'onboard.bioLabel': '自我介绍（选填）',
+      'onboard.bioPh': '一句话告诉大家你是谁',
+      'onboard.charCount': '{n} 字',
+      'onboard.tagsTitle': '爱好标签（选填，最多 {max} 个）',
+      'onboard.tagsHint': '点选后可填写具体喜欢的内容（如电影名）',
+      'onboard.linksTitle': '联系方式（选填）',
+      'onboard.addLink': '添加一个链接',
+      'onboard.errNoNick': '请填写一个昵称',
+      // 设置弹层
+      'settings.title': '设置',
+      'settings.subtitle': '修改后，新的足迹会使用最新身份。',
+      'settings.nickLabel': '昵称',
+      'settings.bioLabel': '自我介绍',
+      'settings.tagsTitle': '爱好标签（选填，最多 {max} 个）',
+      'settings.tagsHint': '点选后可填写具体喜欢的内容（如电影名）',
+      'settings.linksTitle': '联系方式',
+      'settings.addLink': '添加一个链接',
+      'settings.avatarHint': '点击头像上传（≤2 MB）',
+      'settings.uploadAvatar': '上传头像',
+      'settings.removeAvatar': '移除头像',
+      'settings.account': '账号',
+      'settings.logout': '退出当前账号（清除本地身份，重新登录）',
+      'settings.resetGuide': '重新显示导览账号 universal',
+      'settings.language': '语言',
+      'settings.langZh': '中文',
+      'settings.langEn': 'English',
+      // 标签编辑器
+      'tag.maxTags': '最多 {max} 个标签',
+      'tag.maxItems': '单个标签最多 {max} 项',
+      'tag.customPh': '+ 自定义标签',
+      'tag.itemAddPh': '添加喜欢的内容…',
+      'tag.itemAdd': '添加',
+      // 链接编辑器
+      'link.wechat': '微信号',
+      'link.xhs': '小红书',
+      'link.douyin': '抖音',
+      'link.website': '个人网站',
+      'link.other': '其他链接',
+      'link.wechatPh': '微信号（纯文本，不会跳转）',
+      'link.xhsPh': 'https://www.xiaohongshu.com/user/...',
+      'link.douyinPh': 'https://www.douyin.com/user/...',
+      'link.websitePh': 'https://...',
+      'link.otherPh': 'https://...',
+      'link.otherLabelPh': '链接名称（仅其他）',
+      'link.del': '删除此链接',
+      // 个人主页
+      'profile.loading': '加载中...',
+      'profile.title': '个人主页',
+      'profile.close': '关闭',
+      'profile.contact': '联系方式',
+      'profile.empty': '这位路人还没有设置个人主页。',
+      'profile.recent': 'TA 的最近留言（最近 24 小时 · {n} 条）',
+      'profile.recentEmpty': 'TA 最近 24 小时没有留言',
+      'profile.copyWx': '微信号已复制：{wx}',
+      'profile.tags': '爱好标签',
+      // 调试面板
+      'debug.title': '调试面板',
+      'debug.locationPresets': '模拟位置',
+      'debug.options': '选项',
+      'debug.rangeTitle': '附近范围',
+      'debug.rangeHint': '调整后只对本设备本次刷新生效；不写入云端。',
+      'debug.locReal': '使用真实定位',
+      'debug.copySid': '复制 SID',
+      'debug.copiedSid': 'SID 已复制',
+      'debug.copyFailed': '复制失败',
+      'debug.refresh': '手动刷新',
+      'debug.clear': '清空 localStorage',
+      'debug.confirmClear': '确定清空 localStorage？会退出当前账号。',
+      'debug.noSelfIso': '禁用自我隔离（能看见自己的留言）',
+      'debug.guideHint': '提示：桌面端长按齿轮 1 秒；移动端连点齿轮 5 次。',
+      'debug.sid': '会话 ID',
+      'debug.url': 'Supabase',
+      'debug.locState': '定位状态',
+      'debug.loc': '当前坐标',
+      'debug.profile': 'Profile',
+      'debug.lastFetch': '最近一次拉取',
+      // 通用提示
+      'toast.logout': '已退出，正在重新登录...',
+      'toast.savedLocal': '本地已保存',
+      'toast.cloudSyncFailed': '本地已保存，云端同步失败',
+      'toast.guideReset': '已重置，下次刷新会重新显示导览账号',
+      'toast.avatarUploaded': '头像已上传',
+      'toast.avatarRemoved': '头像已移除',
+      'toast.confirmLogout': '确定要退出当前账号？\n会清除本地的身份与会话 ID，云端的数据不会删除。',
+      'toast.confirmRemoveAvatar': '确定移除头像？',
+      // 错误消息
+      'err.noFile': '未选择文件',
+      'err.unsupportedType': '仅支持 JPG / PNG / WebP',
+      'err.fileTooLarge': '文件过大，请控制在 2 MB 以内',
+      'err.noAvatarUrl': '获取头像 URL 失败',
+      'err.processAvatar': '生成图片失败',
+      'err.uploadFailed': '上传失败：{msg}',
+      'err.uploadHints': '\n\n可能原因：\n1) 网络/CORS 拦截\n2) Supabase 项目暂停\n3) Storage 桶不存在（应在 fix-avatars.sql 创建）',
+      'err.uploadDenied': '上传被拒绝：{msg}',
+      'err.uploadDeniedHints': '\n\n可能原因：\n1) RLS 策略未生效 → 跑 fix-avatars.sql\n2) Bucket 不存在 → 在 Storage 里手动创建',
+      // 通用 fallback
+      'common.anonymous': '匿名',
+      'common.anonShort': '匿',
+      'common.unset': '（未配置）',
+      'common.profileMeta': '{name} · {tags} 标签 · {links} 链接',
+      'common.lastFetchFmt': '{time} · {n} 条',
+      'common.mock': '模拟位置：',
+      // 调试面板提示
+      'debug.guideTag': '👆 试试点击我',
+      'debug.sendFailTitle': '足迹发送失败：',
+      'debug.rangeToast': '范围：{m}m',
+      'debug.windowToast': '时间窗：{m}min',
+      // 配置警告横幅
+      'config.title': '⚠️ 还没配置 Supabase',
+      'config.body1': '打开 index.html，找到第 {line} 行附近的 CONFIG，把 URL 和 key 换成你自己的。',
+      'config.body2': '凭证在 supabase.com/dashboard → 选你的项目 → Settings → API 复制。',
+      // 时间 / 距离格式
+      'time.justNow': '刚刚',
+      'time.minAgo': '{n} 分钟前',
+      'dist.rightHere': '在极近处',
+      'dist.aboutM': '在约 {m} 米外',
+      // 内部（云端 fallback）
+      'guide.nickname': 'universal',
+      'guide.bio': '我是这片星空的指路人 ✨\n点击我看看完整的主页长什么样。',
+      'guide.content': '点击我，看看个人主页长什么样 👆',
+      'guide.tag1': '导览',
+      'guide.tag2': '示例',
+      'guide.tag3': '🎬 电影',
+      'guide.tag3Items': ['星际穿越', '银翼杀手', '千与千寻'],
+      'guide.tag4': '🎵 音乐',
+      'guide.tag4Items': ['坂本龙一', '久石让', 'Chet Baker'],
+      'guide.linkGithub': '开源仓库',
+      'guide.linkXhs': '小红书主页',
+      'guide.linkSupabase': '后端服务',
+    },
+    en: {
+      'app.title': 'Near-Field Encounters',
+      'app.docTitle': 'Near-Field Encounters · 5-min Time Capsule',
+      'app.subtitle': 'See people who passed within 100m in the last 5 minutes',
+      'app.welcome': '✨ Welcome — find the glowing star, that\'s your guide',
+      'common.settings': 'Settings',
+      'common.cancel': 'Cancel',
+      'common.save': 'Save',
+      'common.start': 'Get started',
+      'common.confirm': 'OK',
+      'common.close': 'Close',
+      // status
+      'status.locating': 'Locating…',
+      'status.ok': 'Located ✓',
+      'status.denied': 'Location denied — please allow it',
+      'status.error': 'Geolocation not supported',
+      'banner.locationDenied': 'Location was denied. Reload and allow it to use the app.',
+      'banner.networkRetry': 'Network unstable, retrying…',
+      // top + composer
+      'me.line': 'Leaving a footprint as {name}',
+      'composer.placeholder': 'What\'s on your mind right now?',
+      'composer.hint': 'Say something',
+      'composer.charCount': '{n} chars',
+      'composer.sending': 'Sending…',
+      'composer.sent': '✅ Sent',
+      'composer.sendFailed': 'Send failed: {msg}',
+      'composer.sendFailedShort': 'Send failed, please try again',
+      'composer.locatingWait': 'Locating, please wait…',
+      'composer.empty': 'Please type something',
+      'composer.btn': 'Leave footprint',
+      // list
+      'list.header': 'Nearby · 100m · last 5 min',
+      'list.empty': 'It\'s quiet here… Are you the first to leave a footprint?',
+      'list.emptyHint': '0 footprints within {radius}m / last {window}min.\nAsk a friend nearby to send one. Still nothing? Long-press the gear to expand the range.',
+      // onboard
+      'onboard.title': 'Welcome',
+      'onboard.subtitle': 'Pick a name and a one-liner so people can recognize you.',
+      'onboard.nickLabel': 'Nickname (required)',
+      'onboard.nickPh': 'e.g. passing coffee lover',
+      'onboard.bioLabel': 'Bio (optional)',
+      'onboard.bioPh': 'A one-liner about you',
+      'onboard.charCount': '{n} chars',
+      'onboard.tagsTitle': 'Interests (optional, up to {max})',
+      'onboard.tagsHint': 'Pick a tag and add specifics (e.g. favorite movies)',
+      'onboard.linksTitle': 'Contact (optional)',
+      'onboard.addLink': 'Add a link',
+      'onboard.errNoNick': 'Please enter a nickname',
+      // settings
+      'settings.title': 'Settings',
+      'settings.subtitle': 'New footprints will use the latest identity.',
+      'settings.nickLabel': 'Nickname',
+      'settings.bioLabel': 'Bio',
+      'settings.tagsTitle': 'Interests (optional, up to {max})',
+      'settings.tagsHint': 'Pick a tag and add specifics (e.g. favorite movies)',
+      'settings.linksTitle': 'Contact',
+      'settings.addLink': 'Add a link',
+      'settings.avatarHint': 'Tap avatar to upload (≤2 MB)',
+      'settings.uploadAvatar': 'Upload',
+      'settings.removeAvatar': 'Remove',
+      'settings.account': 'Account',
+      'settings.logout': 'Log out (clears local identity)',
+      'settings.resetGuide': 'Show guide user universal again',
+      'settings.language': 'Language',
+      'settings.langZh': '中文',
+      'settings.langEn': 'English',
+      // tag editor
+      'tag.maxTags': 'Up to {max} tags',
+      'tag.maxItems': 'Up to {max} items per tag',
+      'tag.customPh': '+ Custom tag',
+      'tag.itemAddPh': 'Add a favorite…',
+      'tag.itemAdd': 'Add',
+      // link editor
+      'link.wechat': 'WeChat',
+      'link.xhs': 'Xiaohongshu',
+      'link.douyin': 'Douyin',
+      'link.website': 'Website',
+      'link.other': 'Other link',
+      'link.wechatPh': 'WeChat ID (text only)',
+      'link.xhsPh': 'https://www.xiaohongshu.com/user/...',
+      'link.douyinPh': 'https://www.douyin.com/user/...',
+      'link.websitePh': 'https://...',
+      'link.otherPh': 'https://...',
+      'link.otherLabelPh': 'Label (other only)',
+      'link.del': 'Remove link',
+      // profile
+      'profile.loading': 'Loading…',
+      'profile.title': 'Profile',
+      'profile.close': 'Close',
+      'profile.contact': 'Contact',
+      'profile.empty': 'This person hasn\'t set up a profile yet.',
+      'profile.recent': 'Recent messages (last 24h · {n})',
+      'profile.recentEmpty': 'No messages in the last 24h',
+      'profile.copyWx': 'WeChat ID copied: {wx}',
+      'profile.tags': 'Interests',
+      // debug
+      'debug.title': 'Debug',
+      'debug.locationPresets': 'Mock location',
+      'debug.options': 'Options',
+      'debug.rangeTitle': 'Range',
+      'debug.rangeHint': 'Affects this device only, not stored in cloud.',
+      'debug.locReal': 'Use real location',
+      'debug.copySid': 'Copy SID',
+      'debug.copiedSid': 'SID copied',
+      'debug.copyFailed': 'Copy failed',
+      'debug.refresh': 'Refresh',
+      'debug.clear': 'Clear localStorage',
+      'debug.confirmClear': 'Clear localStorage? You will be logged out.',
+      'debug.noSelfIso': 'Disable self-isolation (see own messages)',
+      'debug.guideHint': 'Tip: long-press the gear 1s on desktop; tap 5x on mobile.',
+      'debug.sid': 'Session ID',
+      'debug.url': 'Supabase',
+      'debug.locState': 'Location',
+      'debug.loc': 'Coords',
+      'debug.profile': 'Profile',
+      'debug.lastFetch': 'Last fetch',
+      // toasts
+      'toast.logout': 'Logged out, reloading…',
+      'toast.savedLocal': 'Saved locally',
+      'toast.cloudSyncFailed': 'Saved locally, cloud sync failed',
+      'toast.guideReset': 'Reset. Guide will reappear on next refresh.',
+      'toast.avatarUploaded': 'Avatar uploaded',
+      'toast.avatarRemoved': 'Avatar removed',
+      'toast.confirmLogout': 'Log out? Local identity and SID will be cleared. Cloud data is not affected.',
+      'toast.confirmRemoveAvatar': 'Remove avatar?',
+      // error messages
+      'err.noFile': 'No file selected',
+      'err.unsupportedType': 'Only JPG / PNG / WebP supported',
+      'err.fileTooLarge': 'File too large, max 2 MB',
+      'err.noAvatarUrl': 'Failed to get avatar URL',
+      'err.processAvatar': 'Failed to process avatar',
+      'err.uploadFailed': 'Upload failed: {msg}',
+      'err.uploadHints': '\n\nPossible causes:\n1) Network / CORS blocked\n2) Supabase project paused\n3) Storage bucket missing (run fix-avatars.sql)',
+      'err.uploadDenied': 'Upload denied: {msg}',
+      'err.uploadDeniedHints': '\n\nPossible causes:\n1) RLS policy not active → run fix-avatars.sql\n2) Bucket missing → create in Storage',
+      // common fallbacks
+      'common.anonymous': 'Anonymous',
+      'common.anonShort': 'A',
+      'common.unset': '(unset)',
+      'common.profileMeta': '{name} · {tags} tags · {links} links',
+      'common.lastFetchFmt': '{time} · {n}',
+      'common.mock': 'Mock: ',
+// debug panel hints
+      'debug.guideTag': '👆 Tap me',
+      'debug.sendFailTitle': 'Send failed: ',
+      'debug.rangeToast': 'Range: {m}m',
+      'debug.windowToast': 'Window: {m}min',
+      'debug.windowToastEn': 'Window: {m}min',
+      // config banner
+      'config.title': '⚠️ Supabase not configured',
+      'config.body1': 'Open index.html, find the CONFIG around line {line}, replace URL and key with yours.',
+      'config.body2': 'Get credentials at supabase.com/dashboard → your project → Settings → API.',
+      // time / distance formats
+      'time.justNow': 'just now',
+      'time.minAgo': '{n} min ago',
+      'dist.rightHere': 'right next to you',
+      'dist.aboutM': 'about {m}m away',
+      // location presets
+      'loc.real': 'Real location',
+      'loc.beijing': 'Beijing · Tiananmen',
+      'loc.shanghai': 'Shanghai · Bund',
+      'loc.tokyo': 'Tokyo · Shibuya',
+      // guide
+      'guide.nickname': 'universal',
+      'guide.bio': 'Your guide to this starfield ✨\nTap me to see what a profile page looks like.',
+      'guide.content': 'Tap me to see a profile page 👆',
+      'guide.tag1': 'guide',
+      'guide.tag2': 'sample',
+      'guide.tag3': '🎬 Movies',
+      'guide.tag3Items': ['Interstellar', 'Blade Runner', 'Spirited Away'],
+      'guide.tag4': '🎵 Music',
+      'guide.tag4Items': ['Ryuichi Sakamoto', 'Joe Hisaishi', 'Chet Baker'],
+      'guide.linkGithub': 'Source code',
+      'guide.linkXhs': 'Xiaohongshu',
+      'guide.linkSupabase': 'Backend',
+    },
+  };
+  const LANG_KEY = 'app_lang';
+  const SUPPORTED_LANGS = ['zh', 'en'];
+
+  function detectLang() {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved && SUPPORTED_LANGS.includes(saved)) return saved;
+    const nav = (navigator.language || 'zh').toLowerCase();
+    return nav.startsWith('zh') ? 'zh' : 'en';
+  }
+  const state_lang = { lang: detectLang() };
+
+  function t(key, params) {
+    const dict = I18N[state_lang.lang] || I18N.zh;
+    let s = (dict[key] != null) ? dict[key] : (I18N.zh[key] != null ? I18N.zh[key] : key);
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), String(v));
+      }
+    }
+    return s;
+  }
+  function setLang(lang) {
+    if (!SUPPORTED_LANGS.includes(lang)) return;
+    state_lang.lang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    document.documentElement.lang = (lang === 'zh') ? 'zh-CN' : 'en';
+    applyI18n();
+    // 重渲染可能打开的标签 / 链接编辑器（chip 文案会换）
+    if (el.onboardMask && el.onboardMask.classList.contains('show')) {
+      const current = (typeof collectTags === 'function') ? collectTags(el.onboardTags) : [];
+      renderTagsEditor(el.onboardTags, current);
+    }
+    if (el.settingsMask && el.settingsMask.classList.contains('show')) {
+      const current = (typeof collectTags === 'function') ? collectTags(el.settingsTags) : [];
+      renderTagsEditor(el.settingsTags, current);
+      // 链接行也重建一下，让 select 文本换语言
+      const linkRows = el.settingsLinks.querySelectorAll('.link-row').length;
+      if (linkRows && profile && profile.links) {
+        fillLinks(el.settingsLinks, profile.links);
+      }
+    }
+    // 当前 meLine 文本也要换（保留 meName）
+    applyProfileToUI();
+    // 已渲染的星空（气泡 / 头像 title）也要刷新
+    if (typeof lastRows !== 'undefined' && lastRows && lastRows.length) {
+      renderList(lastRows);
+    }
+    refreshEmptyHint();
+    updateDebugPanel();
+  }
+  function refreshEmptyHint() {
+    const hint = document.getElementById('emptyHint');
+    if (!hint) return;
+    hint.textContent = t('list.emptyHint', {
+      radius: CONFIG.RADIUS_METERS,
+      window: CONFIG.WINDOW_MINUTES,
+    });
+  }
+  function applyI18n() {
+    const getParams = (el) => {
+      const raw = el.getAttribute('data-i18n-params');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    };
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      const params = getParams(el);
+      const text = t(key, params);
+      // 特殊：meLine 包含 <span id="meName">；用模板里的 {name} 占位符替换
+      if (key === 'me.line') {
+        const meName = el.querySelector('#meName');
+        const name = (profile && profile.nickname) || (meName && meName.textContent) || '';
+        const parts = text.split('{name}');
+        el.innerHTML = escapeHtml(parts[0]) +
+          (meName ? `<span id="meName" class="badge">${escapeHtml(name)}</span>` : escapeHtml(name)) +
+          escapeHtml(parts[1] || '');
+        return;
+      }
+      if (el.children.length === 0) {
+        el.textContent = text;
+      } else {
+        const tn = Array.from(el.childNodes).find(n => n.nodeType === 3);
+        if (tn) tn.nodeValue = text;
+      }
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      el.placeholder = t(el.getAttribute('data-i18n-ph'));
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      el.title = t(el.getAttribute('data-i18n-title'));
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+    });
+    document.querySelectorAll('[data-i18n-unit]').forEach(el => {
+      el.textContent = (state_lang.lang === 'en') ? '' : '字';
+    });
+    // 字数计数器单位
+    const unit = (state_lang.lang === 'en') ? 'chars' : '字';
+    document.querySelectorAll('[data-i18n-unit]').forEach(el => { el.textContent = unit; });
+    // 语言按钮高亮
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.style.background = (btn.dataset.lang === state_lang.lang) ? 'var(--accent)' : '';
+      btn.style.color = (btn.dataset.lang === state_lang.lang) ? '#001018' : '';
+    });
+  }
+
+  /* ============================================================
+     1. 配置区 —— Supabase 凭证
+     ============================================================ */
+  const CONFIG = {
+    // ⚠️ 把下面两行换成你自己的 Supabase 项目凭证
+    // 在 https://supabase.com/dashboard 选你的项目 → Settings → API 复制
+    SUPABASE_URL:    'https://byalvlknbqezukucyiul.supabase.co',
+    SUPABASE_ANON_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5YWx2bGtuYnFlenVrdWN5aXVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MjgyMTksImV4cCI6MjA5MzMwNDIxOX0.tu5ZwTTykWy9yjkmqfYponmmAFNuxSTcGTIpqDQiocg',
+    RADIUS_METERS:     100,
+    WINDOW_MINUTES:    5,
+    POLL_MS:           15000,
+  };
+
+  // 检测是否还是占位符
+  const CONFIG_PLACEHOLDER =
+    CONFIG.SUPABASE_URL.includes('YOUR-PROJECT') ||
+    CONFIG.SUPABASE_ANON_KEY.includes('YOUR-');
+
+  /* ============================================================
+     2. Supabase 客户端
+     ============================================================ */
+  const { createClient } = window.supabase;
+  const sb = CONFIG_PLACEHOLDER ? null : createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+  /* ============================================================
+     3. sessionId（自我隔离）
+     ============================================================ */
+  const SESSION_KEY = 'encounter_sid';
+  function getSessionId() {
+    let sid = localStorage.getItem(SESSION_KEY);
+    if (!sid) {
+      sid = (crypto.randomUUID && crypto.randomUUID()) ||
+            ('sess-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
+      localStorage.setItem(SESSION_KEY, sid);
+    }
+    return sid;
+  }
+  const SESSION_ID = getSessionId();
+
+  /* ============================================================
+     4. 用户资料（昵称 + 自我介绍 + 联系方式）→ localStorage
+     ============================================================ */
+  const PROFILE_KEY = 'encounter_profile';
+
+  // 平台类型常量（label / placeholder 走 i18n）
+  const LINK_TYPES = {
+    wechat:  { labelKey: 'link.wechat',  placeholderKey: 'link.wechatPh' },
+    xhs:     { labelKey: 'link.xhs',     placeholderKey: 'link.xhsPh' },
+    douyin:  { labelKey: 'link.douyin',  placeholderKey: 'link.douyinPh' },
+    website: { labelKey: 'link.website', placeholderKey: 'link.websitePh' },
+    other:   { labelKey: 'link.other',   placeholderKey: 'link.otherPh' },
+  };
+  function linkTypeInfo(key) {
+    const info = LINK_TYPES[key] || LINK_TYPES.other;
+    return { label: t(info.labelKey), placeholder: t(info.placeholderKey) };
+  }
+
+  // 根据 URL 自动识别平台
+  function platformFromUrl(u) {
+    try {
+      const host = new URL(u).hostname.toLowerCase();
+      if (host.includes('xiaohongshu.com') || host.includes('xhslink.com')) return 'xhs';
+      if (host.includes('douyin.com'))    return 'douyin';
+      if (host.includes('weixin.qq.com') || host.includes('wechat.com')) return 'wechat';
+      return 'website';
+    } catch { return 'other'; }
+  }
+
+  // 净化 / 校验链接；合法返回 string，不合法返回 null
+  function sanitizeUrl(input, type) {
+    const v = (input || '').trim();
+    if (!v) return null;
+    // 微信号是纯文本 ID
+    if (type === 'wechat') return v;
+    // 其他必须是 http(s)
+    const m = /^https?:\/\/\S+/i.exec(v);
+    if (!m) return null;
+    // 防止 javascript: / data:（已经被正则过滤）
+    const u = m[0];
+    if (/^(javascript|data|vbscript):/i.test(u)) return null;
+    return u;
+  }
+
+  // 校验并清理一个链接条目；返回 { type, url, label? } 或 null
+  function normalizeLink(type, url, label) {
+    const cleanUrl = sanitizeUrl(url, type);
+    if (!cleanUrl) return null;
+    // 如果选了"其他"但 URL 长得像某个平台，自动纠正
+    let finalType = type;
+    if (type === 'other' || type === 'website') {
+      finalType = platformFromUrl(cleanUrl);
+      if (finalType === 'wechat' && !cleanUrl.startsWith('http')) {
+        // 微信号走纯文本分支
+        finalType = 'wechat';
+      }
+    }
+    const item = { type: finalType, url: cleanUrl };
+    // label 只对最终类型为 other 时保留，避免冗余
+    if (finalType === 'other' && label && String(label).trim()) {
+      item.label = String(label).trim().slice(0, 30);
+    }
+    return item;
+  }
+
+  // 预设标签（emoji + 文字）
+  const TAG_PRESETS = {
+    zh: [
+      '🎮 游戏', '📚 书籍', '🎬 电影', '🎵 音乐',
+      '🏃 运动', '🍜 美食', '✈️ 旅行', '💻 编程',
+      '📷 摄影', '🎨 绘画', '🐱 宠物', '☕ 咖啡',
+    ],
+    en: [
+      '🎮 Games', '📚 Books', '🎬 Movies', '🎵 Music',
+      '🏃 Sports', '🍜 Food', '✈️ Travel', '💻 Coding',
+      '📷 Photo', '🎨 Art', '🐱 Pets', '☕ Coffee',
+    ],
+  };
+  const MAX_TAGS = 8;
+  const MAX_ITEMS_PER_TAG = 6;
+  const MAX_TAG_ITEM_LEN = 16;
+
+  function tagPresets() { return TAG_PRESETS[state_lang.lang] || TAG_PRESETS.zh; }
+  function cssEscape(s) {
+    if (typeof CSS !== 'undefined' && CSS.escape) return CSS.escape(s);
+    return String(s).replace(/["\\\n\r]/g, (c) => '\\' + c.charCodeAt(0).toString(16) + ' ');
+  }
+
+  // 接受任意旧/新格式，返回规范化的 [{tag, items[]}]
+  // 旧: ['🎬 电影'] 或 ['movies']
+  // 新: [{tag:'🎬 电影', items:['指环王']}]
+  function normalizeTags(arr) {
+    if (!Array.isArray(arr)) return [];
+    const seen = new Set();
+    const out = [];
+    for (const raw of arr) {
+      let tag = null, items = [];
+      if (typeof raw === 'string') {
+        tag = raw.trim().slice(0, 12);
+      } else if (raw && typeof raw === 'object' && typeof raw.tag === 'string') {
+        tag = String(raw.tag).trim().slice(0, 12);
+        if (Array.isArray(raw.items)) {
+          for (const it of raw.items) {
+            if (typeof it !== 'string') continue;
+            const v = it.trim().slice(0, MAX_TAG_ITEM_LEN);
+            if (!v) continue;
+            items.push(v);
+            if (items.length >= MAX_ITEMS_PER_TAG) break;
+          }
+        }
+      }
+      if (!tag) continue;
+      if (seen.has(tag)) {
+        // 合并 items 到已存在的项
+        const exist = out.find(o => o.tag === tag);
+        if (exist) {
+          for (const it of items) {
+            if (!exist.items.includes(it) && exist.items.length < MAX_ITEMS_PER_TAG) exist.items.push(it);
+          }
+        }
+        continue;
+      }
+      seen.add(tag);
+      out.push({ tag, items });
+      if (out.length >= MAX_TAGS) break;
+    }
+    return out;
+  }
+
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      if (!p || typeof p.nickname !== 'string' || !p.nickname.trim()) return null;
+      const links = Array.isArray(p.links)
+        ? p.links
+            .map(l => normalizeLink(l && l.type, l && l.url, l && l.label))
+            .filter(Boolean)
+        : [];
+      return {
+        nickname: p.nickname.trim(),
+        bio: (p.bio || '').trim(),
+        links,
+        tags: normalizeTags(p.tags),
+      };
+    } catch { return null; }
+  }
+  function saveProfile(p) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({
+      nickname: p.nickname,
+      bio: p.bio || '',
+      links: p.links || [],
+      tags: normalizeTags(p.tags),
+      avatar_url: p.avatar_url || null,
+      updatedAt: Date.now(),
+    }));
+  }
+  let profile = loadProfile();
+
+  /* ============================================================
+     4b. 头像 —— 头像生成 + 上传 + 缓存破坏
+     ============================================================ */
+  // 根据昵称生成稳定的"几何 + 配色"头像 fallback
+  // 返回 [前景色, 背景色, 首字符]
+  function avatarFallback(nickname) {
+    if (!nickname) nickname = '?';
+    let h = 0;
+    for (let i = 0; i < nickname.length; i++) h = (h * 31 + nickname.charCodeAt(i)) | 0;
+    const palettes = [
+      ['#00e5ff', '#1a3a4a'],
+      ['#7c4dff', '#3a2a5a'],
+      ['#ff5fae', '#5a2a4a'],
+      ['#3ecf8e', '#1a4a3a'],
+      ['#ffb84d', '#5a4a1a'],
+      ['#ff7a59', '#5a2a1a'],
+    ];
+    const p = palettes[Math.abs(h) % palettes.length];
+    const ch = nickname.trim().charAt(0).toUpperCase();
+    return { fg: p[0], bg: p[1], char: ch };
+  }
+  // 把头像元素填充：优先用 URL，否则用 fallback
+  function fillAvatar(el2, nickname, url) {
+    el2.innerHTML = '';
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = nickname || t('common.anonShort');
+      img.onerror = () => { el2.innerHTML = ''; renderAvatarFallback(el2, nickname); };
+      el2.appendChild(img);
+    } else {
+      renderAvatarFallback(el2, nickname);
+    }
+  }
+  function renderAvatarFallback(el2, nickname) {
+    const f = avatarFallback(nickname);
+    el2.textContent = f.char;
+    el2.style.background = f.bg;
+    el2.style.color = f.fg;
+  }
+  // 给 URL 加 cache-busting 参数（避免更新头像后看不到新图）
+  function avatarUrlWithBust(url) {
+    if (!url) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}t=${Date.now()}`;
+  }
+
+  // 把用户选中的 File 压缩 / 调整到 256x256 JPEG，返回 Blob
+  async function processAvatarFile(file) {
+    if (!file) throw new Error(t('err.noFile'));
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+      throw new Error(t('err.unsupportedType'));
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error(t('err.fileTooLarge'));
+    }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = dataUrl;
+    });
+    // 居中裁剪为正方形，缩放到 256
+    const size = Math.min(img.width, img.height);
+    const sx = (img.width - size) / 2;
+    const sy = (img.height - size) / 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, sx, sy, size, size, 0, 0, 256, 256);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (!blob) reject(new Error(t('err.processAvatar')));
+        else resolve(blob);
+      }, 'image/jpeg', 0.85);
+    });
+  }
+
+  // 上传头像到 Supabase Storage，返回公开 URL
+  async function uploadAvatar(blob) {
+    const path = `avatars/${SESSION_ID}.jpg`;
+    console.log('[avatar] uploading', path, 'size:', blob.size, 'type:', blob.type);
+    let upErr;
+    try {
+      // 先尝试 remove 旧头像（允许失败），再 upload 新头像
+      await sb.storage.from('avatars').remove([path]).catch(() => {});
+      const r = await sb.storage
+        .from('avatars')
+        .upload(path, blob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
+      console.log('[avatar] upload response:', r);
+      upErr = r && r.error;
+    } catch (e) {
+      // 网络层错误（Failed to fetch 等）
+      console.error('avatar upload network error:', e);
+      throw new Error(
+        t('err.uploadFailed', { msg: (e && e.message ? e.message : String(e)) }) +
+        t('err.uploadHints')
+      );
+    }
+    if (upErr) {
+      console.error('avatar upload supabase error:', upErr);
+      const msg = upErr.message || upErr.errorDescription || JSON.stringify(upErr);
+      throw new Error(
+        t('err.uploadDenied', { msg }) +
+        '\n\nBucket: avatars\n' +
+        t('err.uploadDeniedHints')
+      );
+    }
+    const { data } = sb.storage.from('avatars').getPublicUrl(path);
+    if (!data || !data.publicUrl) throw new Error(t('err.noAvatarUrl'));
+    return data.publicUrl;
+  }
+  async function deleteAvatar() {
+    const path = `avatars/${SESSION_ID}.jpg`;
+    try {
+      await sb.storage.from('avatars').remove([path]);
+    } catch (e) {
+      console.warn('deleteAvatar failed', e);
+    }
+  }
+
+  /* ============================================================
+     5. 响应式：根据视口切换主按钮的"图标 / 文字"
+     ============================================================ */
+  function syncButtonLabel() {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    document.querySelectorAll('button.primary').forEach(btn => {
+      const text = btn.querySelector('.btn-text');
+      const icon = btn.querySelector('.btn-icon');
+      if (text) text.style.display = isMobile ? 'none' : '';
+      if (icon) icon.style.display = isMobile ? '' : 'none';
+    });
+  }
+  window.addEventListener('resize', syncButtonLabel);
+
+  /* ============================================================
+     6. 元素引用
+     ============================================================ */
+  const el = {
+    status:           document.getElementById('status'),
+    statusText:       document.getElementById('statusText'),
+    banner:           document.getElementById('banner'),
+    content:          document.getElementById('content'),
+    submitBtn:        document.getElementById('submitBtn'),
+    hint:             document.getElementById('hint'),
+    list:             document.getElementById('list'),
+    starfield:        document.getElementById('starfield'),
+    starsL1:          document.getElementById('starsL1'),
+    starsL2:          document.getElementById('starsL2'),
+    meteors:          document.getElementById('meteors'),
+    empty:            document.getElementById('empty'),
+    netWarn:          document.getElementById('netWarn'),
+    settingsBtn:      document.getElementById('settingsBtn'),
+    meLine:           document.getElementById('meLine'),
+    meName:           document.getElementById('meName'),
+
+    onboardMask:      document.getElementById('onboardMask'),
+    onboardNick:      document.getElementById('onboardNick'),
+    onboardBio:       document.getElementById('onboardBio'),
+    onboardBioCount:  document.getElementById('onboardBioCount'),
+    onboardSave:      document.getElementById('onboardSave'),
+    onboardErr:       document.getElementById('onboardErr'),
+    onboardLinks:     document.getElementById('onboardLinks'),
+    onboardTags:      document.getElementById('onboardTags'),
+
+    settingsMask:     document.getElementById('settingsMask'),
+    settingsNick:     document.getElementById('settingsNick'),
+    settingsBio:      document.getElementById('settingsBio'),
+    settingsBioCount: document.getElementById('settingsBioCount'),
+    settingsSave:     document.getElementById('settingsSave'),
+    settingsClose:    document.getElementById('settingsClose'),
+    settingsCloseX:  document.getElementById('settingsCloseX'),
+    settingsErr:      document.getElementById('settingsErr'),
+    settingsLinks:    document.getElementById('settingsLinks'),
+    settingsTags:     document.getElementById('settingsTags'),
+    settingsAvatarPreview: document.getElementById('settingsAvatarPreview'),
+    settingsUploadBtn: document.getElementById('settingsUploadBtn'),
+    settingsRemoveAvatarBtn: document.getElementById('settingsRemoveAvatarBtn'),
+    settingsAvatarFile: document.getElementById('settingsAvatarFile'),
+    settingsLogout:    document.getElementById('settingsLogout'),
+    settingsResetGuide: document.getElementById('settingsResetGuide'),
+    langBtnZh:         document.getElementById('langBtnZh'),
+    langBtnEn:         document.getElementById('langBtnEn'),
+
+    profileMask:     document.getElementById('profileMask'),
+    profileContent:  document.getElementById('profileContent'),
+    profileClose:    document.getElementById('profileClose'),
+    profileCloseX:   document.getElementById('profileCloseX'),
+  };
+
+  /* ============================================================
+     7. 应用状态
+     ============================================================ */
+  const state = {
+    loc: null,
+    locState: 'pending',
+    submitting: false,
+    pollTimer: null,
+  };
+
+  /* ============================================================
+     8. 工具函数
+     ============================================================ */
+  function haversine(a, b) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+    const h = Math.sin(dLat/2) ** 2 +
+              Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function formatRelative(ts) {
+    const sec = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 1000));
+    if (sec < 60) return t('time.justNow');
+    const n = Math.floor(sec / 60);
+    return t('time.minAgo', { n });
+  }
+  function formatDistance(m) {
+    if (m < 10) return t('dist.rightHere');
+    return t('dist.aboutM', { m: Math.round(m) });
+  }
+  function setHint(text, cls = '') {
+    el.hint.textContent = text;
+    el.hint.className = 'hint' + (cls ? ' ' + cls : '');
+  }
+  function setLocationState(s, text) {
+    state.locState = s;
+    el.status.className = 'status ' + s;
+    el.statusText.textContent = text;
+    el.banner.classList.toggle('show', s === 'denied');
+    const disabled = (s !== 'ok');
+    el.content.disabled = disabled;
+    el.submitBtn.disabled = disabled || state.submitting || !profile;
+  }
+  function showNetWarn(on) {
+    el.netWarn.classList.toggle('show', !!on);
+  }
+
+  /* ============================================================
+     9. 资料 UI 同步
+     ============================================================ */
+  function applyProfileToUI() {
+    if (profile && profile.nickname) {
+      el.meLine.style.display = 'flex';
+      el.meName.textContent = profile.nickname;
+      // meLine 内部文本（"以 X 的身份留下足迹"）需要跟着语言重排
+      applyI18n();
+    } else {
+      el.meLine.style.display = 'none';
+    }
+    el.submitBtn.disabled = !profile || (state.locState !== 'ok');
+  }
+
+  /* ============================================================
+     9b. 链接编辑器 —— 在 onboarding / settings 两个弹层里通用
+     ============================================================ */
+  // 单个链接行：type select + [可选 label input] + url input + 删除按钮
+  function buildLinkRow(initialType, initialUrl, initialLabel) {
+    const row = document.createElement('div');
+    row.className = 'link-row';
+
+    const sel = document.createElement('select');
+    const populateSel = () => {
+      sel.innerHTML = '';
+      for (const [k] of Object.entries(LINK_TYPES)) {
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = linkTypeInfo(k).label;
+        sel.appendChild(opt);
+      }
+    };
+    populateSel();
+    sel.value = initialType || 'website';
+
+    // "其他" 类型会额外显示一个名称输入框
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.className = 'label-input';
+    labelInput.placeholder = t('link.otherLabelPh');
+    labelInput.value = initialLabel || '';
+    labelInput.style.display = (sel.value === 'other') ? '' : 'none';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'url-input';
+    input.placeholder = linkTypeInfo(sel.value).placeholder;
+    input.value = initialUrl || '';
+
+    // 切换类型：更新 placeholder + 控制 label 框显隐
+    sel.addEventListener('change', () => {
+      input.placeholder = linkTypeInfo(sel.value).placeholder;
+      labelInput.style.display = (sel.value === 'other') ? '' : 'none';
+    });
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'del';
+    del.setAttribute('aria-label', t('link.del'));
+    del.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    del.addEventListener('click', () => {
+      row.remove();
+      if (!containerHasLinks()) {
+      // 永远保留至少一行；尝试恢复 row 所在的容器
+      const parent = row.parentElement;
+      if (parent) ensureAtLeastOneRow(parent);
+    }
+    });
+
+    row.appendChild(sel);
+    row.appendChild(labelInput);
+    row.appendChild(input);
+    row.appendChild(del);
+    return row;
+  }
+
+  function containerHasLinks() {
+    return el.onboardLinks.children.length + el.settingsLinks.children.length > 0;
+  }
+  // 把容器里所有行收集为 [{type, url, label?}]，过滤无效项
+  function collectLinks(container) {
+    const out = [];
+    container.querySelectorAll('.link-row').forEach(row => {
+      const sel = row.querySelector('select');
+      const inp = row.querySelector('input.url-input');
+      const lab = row.querySelector('input.label-input');
+      if (!sel || !inp) return;
+      const normalized = normalizeLink(sel.value, inp.value, lab ? lab.value : '');
+      if (normalized) out.push(normalized);
+    });
+    return out;
+  }
+  // 用一组链接数据填充容器
+  function fillLinks(container, links) {
+    container.innerHTML = '';
+    if (!links || !links.length) {
+      container.appendChild(buildLinkRow('website', '', ''));
+      return;
+    }
+    links.forEach(l => container.appendChild(buildLinkRow(l.type, l.url, l.label)));
+  }
+  // 至少保留一行可见（哪怕空白）
+  function ensureAtLeastOneRow(container) {
+    if (!container.children.length) {
+      container.appendChild(buildLinkRow('website', '', ''));
+    }
+  }
+  // 绑定"添加一个链接"按钮
+  document.querySelectorAll('button.add-link').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const last = target.querySelector('.link-row:last-child select');
+      const t = last ? last.value : 'website';
+      target.appendChild(buildLinkRow(t, '', ''));
+      // 焦点到新行的 URL 输入框（label 仅在 other 类型显示，自动聚焦 url 更合适）
+      const newInput = target.lastElementChild.querySelector('input.url-input');
+      if (newInput) newInput.focus();
+    });
+  });
+
+  /* ============================================================
+     9c. 标签编辑器（onboarding / settings 通用）
+     ============================================================ */
+  // 渲染整个标签编辑器：预设 chip + 自填 + 已选标签的 items 子编辑器
+  // selectedTags 支持 ['tag'] 或 [{tag, items[]}]
+  function renderTagsEditor(container, selectedTags, sharedMap, openThis) {
+    container.innerHTML = '';
+    // 归一化为 [{tag, items[]}]
+    const list = normalizeTags(selectedTags);
+    const map = sharedMap || new Map(list.map(o => [o.tag, o.items.slice()]));
+    let pendingOpen = openThis || null; // 重渲染后自动打开某个 tag 的 items
+
+    const refreshAll = () => {
+      // 先记录当前展开的 tags
+      const openTags = new Set();
+      container.querySelectorAll('.tag-items.open').forEach(el => {
+        openTags.add(el.dataset.tag);
+      });
+      if (pendingOpen) openTags.add(pendingOpen);
+      pendingOpen = null;
+      renderTagsEditor(container, Array.from(map.entries()).map(([tag, items]) => ({ tag, items })), map);
+      openTags.forEach(tag => {
+        container.querySelectorAll('.tag-items').forEach(el => {
+          if (el.dataset.tag === tag) el.classList.add('open');
+        });
+      });
+    };
+
+    const presets = tagPresets();
+
+    // 已选标签优先排在前面（按选中顺序）；剩下的预设排后面
+    const ordered = [];
+    list.forEach(o => ordered.push(o.tag));
+    presets.forEach(p => { if (!map.has(p)) ordered.push(p); });
+
+    for (const tag of ordered) {
+      const chip = document.createElement('span');
+      const on = map.has(tag);
+      chip.className = 'tag-chip' + (on ? ' on' : '');
+      chip.dataset.tag = tag;
+      chip.textContent = tag;
+      chip.addEventListener('click', () => {
+        if (map.has(tag)) {
+          map.delete(tag);
+          chip.classList.remove('on');
+        } else {
+          if (map.size >= MAX_TAGS) {
+            showToast(t('tag.maxTags', { max: MAX_TAGS }));
+            return;
+          }
+          map.set(tag, []);
+          chip.classList.add('on');
+          pendingOpen = tag; // 首次点选 → 自动展开子项输入
+        }
+        // 每次切换都整体重渲染（确保展开区跟随状态）
+        refreshAll();
+      });
+      container.appendChild(chip);
+    }
+
+    // 自填输入框（添加自定义标签，回车提交）
+    const custom = document.createElement('input');
+    custom.type = 'text';
+    custom.className = 'tag-custom';
+    custom.placeholder = t('tag.customPh');
+    custom.maxLength = 12;
+    custom.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const v = custom.value.trim().slice(0, 12);
+        if (!v) return;
+        if (map.size >= MAX_TAGS && !map.has(v)) {
+          showToast(t('tag.maxTags', { max: MAX_TAGS }));
+          return;
+        }
+        if (!map.has(v)) {
+          map.set(v, []);
+          pendingOpen = v; // 新建自定义标签 → 自动展开
+        }
+        custom.value = '';
+        refreshAll();
+      }
+    });
+    container.appendChild(custom);
+
+    // 已选标签的 items 子编辑器（折叠在 chip 行下方；点 chip 时不会重复出现）
+    list.forEach(o => {
+      const block = document.createElement('div');
+      block.className = 'tag-items';
+      block.dataset.tag = o.tag;
+
+      const head = document.createElement('div');
+      head.className = 'tag-items-head';
+      head.innerHTML = `<span class="tag-items-name">${escapeHtml(o.tag)}</span><span class="tag-items-toggle" aria-hidden="true">▾</span>`;
+      head.addEventListener('click', () => block.classList.toggle('open'));
+      block.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'tag-items-body';
+
+      // 已添加的 item chips
+      const renderChips = () => {
+        body.querySelectorAll('.tag-item-chip').forEach(n => n.remove());
+        const items = map.get(o.tag) || [];
+        items.forEach((it, idx) => {
+          const c = document.createElement('span');
+          c.className = 'tag-item-chip';
+          c.innerHTML = `<span>${escapeHtml(it)}</span><button type="button" aria-label="×">×</button>`;
+          c.querySelector('button').addEventListener('click', () => {
+            const arr = map.get(o.tag) || [];
+            arr.splice(idx, 1);
+            map.set(o.tag, arr);
+            renderChips();
+          });
+          body.appendChild(c);
+        });
+      };
+      renderChips();
+
+      // 添加输入框 + 按钮
+      const inputRow = document.createElement('div');
+      inputRow.className = 'tag-items-input-row';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = MAX_TAG_ITEM_LEN;
+      input.placeholder = t('tag.itemAddPh');
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.textContent = t('tag.itemAdd');
+      const submit = () => {
+        const v = input.value.trim().slice(0, MAX_TAG_ITEM_LEN);
+        if (!v) return;
+        const arr = map.get(o.tag) || [];
+        if (arr.includes(v)) { input.value = ''; return; }
+        if (arr.length >= MAX_ITEMS_PER_TAG) {
+          showToast(t('tag.maxItems', { max: MAX_ITEMS_PER_TAG }));
+          return;
+        }
+        arr.push(v);
+        map.set(o.tag, arr);
+        input.value = '';
+        renderChips();
+      };
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      });
+      addBtn.addEventListener('click', submit);
+      inputRow.appendChild(input);
+      inputRow.appendChild(addBtn);
+      body.appendChild(inputRow);
+
+      block.appendChild(body);
+      container.appendChild(block);
+    });
+  }
+
+  // 收集当前选中标签 + items，归一化为 [{tag, items[]}]
+  function collectTags(container) {
+    // 从 chip 状态推断哪些 tag 被选中，再从 .tag-items 取对应 items
+    const onTags = new Set();
+    container.querySelectorAll('.tag-chip.on').forEach(chip => onTags.add(chip.dataset.tag));
+    const out = [];
+    container.querySelectorAll('.tag-items').forEach(el => {
+      const tag = el.dataset.tag;
+      if (!onTags.has(tag)) return;
+      const items = Array.from(el.querySelectorAll('.tag-item-chip span:first-child')).map(s => s.textContent);
+      out.push({ tag, items });
+    });
+    // 即便某个 chip 没有展开的 items 区域（罕见），也保留选中
+    onTags.forEach(tag => {
+      if (!out.find(o => o.tag === tag)) out.push({ tag, items: [] });
+    });
+    return normalizeTags(out);
+  }
+
+  /* ============================================================
+     10. 新手引导
+     ============================================================ */
+  function showOnboarding() {
+    el.onboardMask.classList.add('show');
+    el.onboardErr.textContent = '';
+    ensureAtLeastOneRow(el.onboardLinks);
+    renderTagsEditor(el.onboardTags, []);
+    setTimeout(() => el.onboardNick.focus(), 100);
+  }
+  function hideOnboarding() { el.onboardMask.classList.remove('show'); }
+  function commitOnboard() {
+    const nick = el.onboardNick.value.trim();
+    const bio  = el.onboardBio.value.trim();
+    if (!nick) { el.onboardErr.textContent = t('onboard.errNoNick'); return; }
+    const links = collectLinks(el.onboardLinks);
+    const tags  = collectTags(el.onboardTags);
+    profile = { nickname: nick, bio, links, tags, avatar_url: null };
+    saveProfile(profile);
+    applyProfileToUI();
+    hideOnboarding();
+    // 异步同步到云端（首次创建 profiles 行）；失败只提示，不影响本地保存
+    syncProfileToCloud().catch(e => {
+      console.warn('sync profile (onboard) failed', e);
+      showToast(t('toast.cloudSyncFailed'));
+    });
+  }
+  el.onboardBio.addEventListener('input', () => {
+    el.onboardBioCount.textContent = el.onboardBio.value.length;
+  });
+  el.onboardSave.addEventListener('click', commitOnboard);
+  el.onboardNick.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); commitOnboard(); }
+  });
+  el.onboardBio.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitOnboard(); }
+  });
+
+  /* ============================================================
+     11. 设置
+     ============================================================ */
+  function openSettings() {
+    el.settingsMask.classList.add('show');
+    el.settingsErr.textContent = '';
+    el.settingsNick.value = profile ? profile.nickname : '';
+    el.settingsBio.value  = profile ? profile.bio : '';
+    el.settingsBioCount.textContent = el.settingsBio.value.length;
+    fillLinks(el.settingsLinks, profile ? profile.links : []);
+    renderTagsEditor(el.settingsTags, profile ? profile.tags : []);
+    // 头像预览
+    fillAvatar(el.settingsAvatarPreview, profile ? profile.nickname : '?', profile ? profile.avatar_url : null);
+    el.settingsRemoveAvatarBtn.style.display = profile && profile.avatar_url ? '' : 'none';
+    setTimeout(() => el.settingsNick.focus(), 100);
+  }
+  function closeSettings() {
+    el.settingsMask.classList.remove('show');
+    ensureAtLeastOneRow(el.settingsLinks);
+  }
+  async function saveSettings() {
+    const nick = el.settingsNick.value.trim();
+    const bio  = el.settingsBio.value.trim();
+    if (!nick) { el.settingsErr.textContent = t('onboard.errNoNick'); return; }
+    const links = collectLinks(el.settingsLinks);
+    const tags  = collectTags(el.settingsTags);
+    // 即使本次一行链接都没填，也保留之前已保存的（避免误清空联系方式）
+    const prevLinks = profile && Array.isArray(profile.links) ? profile.links : [];
+    const finalLinks = links.length ? links : prevLinks;
+    const prevTags = profile && Array.isArray(profile.tags) ? profile.tags : [];
+    const finalTags = tags.length ? tags : prevTags;
+    profile = {
+      nickname: nick,
+      bio,
+      links: finalLinks,
+      tags: finalTags,
+      avatar_url: profile ? profile.avatar_url : null,
+    };
+    saveProfile(profile);
+    applyProfileToUI();
+    // 关闭弹窗前先关掉它，给用户即时反馈
+    closeSettings();
+    // 异步同步到云端；失败 toast 提示，本地仍然已保存
+    syncProfileToCloud().catch(e => {
+      console.warn('sync profile failed', e);
+      showToast(t('toast.cloudSyncFailed'));
+    });
+  }
+  el.settingsClose.addEventListener('click', closeSettings);
+  if (el.settingsCloseX) el.settingsCloseX.addEventListener('click', closeSettings);
+  el.settingsSave.addEventListener('click', saveSettings);
+  el.settingsBio.addEventListener('input', () => {
+    el.settingsBioCount.textContent = el.settingsBio.value.length;
+  });
+
+  // 语言切换
+  el.langBtnZh = document.getElementById('langBtnZh');
+  el.langBtnEn = document.getElementById('langBtnEn');
+  if (el.langBtnZh) el.langBtnZh.addEventListener('click', () => setLang('zh'));
+  if (el.langBtnEn) el.langBtnEn.addEventListener('click', () => setLang('en'));
+
+  // 退出当前账号：清空本地身份 + 会话 ID，重新进入引导
+  el.settingsLogout.addEventListener('click', () => {
+    if (!confirm(t('toast.confirmLogout'))) return;
+    closeSettings();
+    try {
+      localStorage.removeItem(PROFILE_KEY);
+      localStorage.removeItem(SESSION_KEY);
+    } catch (e) { console.warn('clear local profile/sid failed', e); }
+    showToast(t('toast.logout'));
+    // 用 reload 让所有模块状态重置，干净地走到 onboarding 流程
+    setTimeout(() => location.reload(), 400);
+  });
+
+  // 重新显示导览账号 universal：清掉 GUIDE_SEEN_KEY，立刻拉一次
+  el.settingsResetGuide.addEventListener('click', async () => {
+    try { localStorage.removeItem(GUIDE_SEEN_KEY); } catch (e) {}
+    showToast(t('toast.guideReset'));
+    closeSettings();
+    // 立刻拉一次，让 universal 立刻出现
+    await refresh();
+  });
+
+  // 头像：上传 / 移除
+  el.settingsUploadBtn.addEventListener('click', () => el.settingsAvatarFile.click());
+  el.settingsAvatarPreview.addEventListener('click', () => el.settingsAvatarFile.click());
+  el.settingsAvatarFile.addEventListener('change', async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = ''; // 清空以便重复选同一文件
+    if (!f) return;
+    el.settingsErr.textContent = '';
+    el.settingsUploadBtn.disabled = true;
+    try {
+      const blob = await processAvatarFile(f);
+      const url = await uploadAvatar(blob);
+      if (!profile) profile = { nickname: nick_initial(), bio: '', links: [], tags: [], avatar_url: null };
+      profile.avatar_url = url;
+      saveProfile(profile);
+      fillAvatar(el.settingsAvatarPreview, profile.nickname, url);
+      el.settingsRemoveAvatarBtn.style.display = '';
+      showToast(t('toast.avatarUploaded'));
+      // 同步 profile（含 avatar_url）到云端
+      syncProfileToCloud().catch(err => console.warn('sync after avatar failed', err));
+    } catch (err) {
+      el.settingsErr.textContent = err.message || String(err);
+    } finally {
+      el.settingsUploadBtn.disabled = false;
+    }
+  });
+  el.settingsRemoveAvatarBtn.addEventListener('click', async () => {
+    if (!profile || !profile.avatar_url) return;
+    if (!confirm(t('toast.confirmRemoveAvatar'))) return;
+    el.settingsErr.textContent = '';
+    try {
+      await deleteAvatar().catch(() => {}); // 即便 storage 删除失败，也允许清空本地引用
+      profile.avatar_url = null;
+      saveProfile(profile);
+      fillAvatar(el.settingsAvatarPreview, profile.nickname, null);
+      el.settingsRemoveAvatarBtn.style.display = 'none';
+      showToast(t('toast.avatarRemoved'));
+      syncProfileToCloud().catch(err => console.warn('sync after remove failed', err));
+    } catch (err) {
+      el.settingsErr.textContent = err.message || String(err);
+    }
+  });
+
+  // 拿一个临时的昵称（用于首次上传头像时 profile 还没填的情况）
+  function nick_initial() {
+    return (profile && profile.nickname) || t('common.anonymous');
+  }
+
+  /* ============================================================
+     11b. profile 同步到云端（写 profiles 表）
+     ============================================================ */
+  async function syncProfileToCloud() {
+    if (!profile) return;
+    const row = {
+      session_id: SESSION_ID,
+      nickname:   profile.nickname,
+      bio:        profile.bio || null,
+      tags:       Array.isArray(profile.tags) ? profile.tags : [],
+      links:      Array.isArray(profile.links) ? profile.links : [],
+      avatar_url: profile.avatar_url || null,
+      updated_at: new Date().toISOString(),
+    };
+    // 用 upsert：插入或更新
+    const { error } = await sb.from('profiles').upsert(row, { onConflict: 'session_id' });
+    if (error) throw error;
+  }
+
+  // 把某用户（从 encounter 兜底得到的）profile 同步到云端，方便下次别人直接拿到
+  function backfillProfileToCloud(p) {
+    if (!p || !p.session_id || p.session_id === SESSION_ID) return;
+    const row = {
+      session_id: p.session_id,
+      nickname:   p.nickname || t('common.anonymous'),
+      bio:        p.bio || null,
+      tags:       Array.isArray(p.tags) ? p.tags : [],
+      links:      Array.isArray(p.links) ? p.links : [],
+      avatar_url: p.avatar_url || null,
+      updated_at: new Date().toISOString(),
+    };
+    sb.from('profiles').upsert(row, { onConflict: 'session_id' })
+      .then(({ error }) => {
+        if (error) console.warn('[backfill] failed:', error);
+      })
+      .catch(e => console.warn('[backfill] failed:', e));
+  }
+  // 拉取某人 profile
+  async function fetchProfile(sessionId) {
+    const { data, error } = await sb
+      .from('profiles')
+      .select('session_id, nickname, bio, tags, links, avatar_url, updated_at')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+    if (error) { console.warn('fetchProfile', error); return null; }
+    return data;
+  }
+  // 拉取某人最近的留言
+  async function fetchAuthorEncounters(sessionId, limit = 30) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 最近 24h
+    const { data, error } = await sb
+      .from('nearby_encounters')
+      .select('id, content, created_at')
+      .eq('session_id', sessionId)
+      .gt('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) { console.warn('fetchAuthorEncounters', error); return []; }
+    return data || [];
+  }
+
+  /* ============================================================
+     11c. 个人主页弹层 —— 点别人头像时打开
+     ============================================================ */
+  // 构造 universal 的默认 profile（与云端无记录时一致）
+  function guideFallbackProfile() {
+    return {
+      session_id: GUIDE_SESSION_ID,
+      nickname: t('guide.nickname'),
+      bio: t('guide.bio'),
+      tags: normalizeTags([
+        { tag: t('guide.tag1'), items: [] },
+        { tag: t('guide.tag3'), items: t('guide.tag3Items') },
+        { tag: t('guide.tag4'), items: t('guide.tag4Items') },
+      ]),
+      links: [
+        { type: 'website', url: 'https://github.com/', label: t('guide.linkGithub') },
+        { type: 'xhs',     url: 'https://www.xiaohongshu.com/', label: t('guide.linkXhs') },
+        { type: 'website', url: 'https://supabase.com/', label: t('guide.linkSupabase') },
+      ],
+      avatar_url: null,
+    };
+  }
+
+  async function openProfilePage(sessionId) {
+    if (!sessionId) return;
+    currentProfileSessionId = sessionId;
+    el.profileMask.classList.add('show');
+    el.profileContent.innerHTML = `<div class="profile-empty" data-i18n="profile.loading">${t('profile.loading')}</div>`;
+    try {
+      let p, msgs;
+      if (sessionId === GUIDE_SESSION_ID) {
+        // 导览账号：优先用云端资料，回退到本地默认值
+        try {
+          const cloud = await fetchProfile(sessionId);
+          p = cloud || guideFallbackProfile();
+        } catch (e) {
+          p = guideFallbackProfile();
+        }
+        msgs = [];
+      } else {
+        // 其他用户：先并行拉 profile + 历史留言
+        const [cloudP, fetchedMsgs] = await Promise.all([
+          fetchProfile(sessionId),
+          fetchAuthorEncounters(sessionId, 30),
+        ]);
+        p = cloudP;
+        msgs = fetchedMsgs || [];
+        // 云端没 profile 行（用户没完成 onboarding / 同步失败）→ 从 encounter 行兜底
+        if (!p) {
+          p = buildProfileFromEncounter(sessionId);
+          if (p) backfillProfileToCloud(p); // 异步补到云端，下次直接能拿到
+        }
+      }
+      renderProfilePage(p, msgs);
+    } catch (e) {
+      console.warn('openProfilePage failed', e);
+      const msg = (e && (e.message || e.details || e.hint)) || String(e);
+      el.profileContent.innerHTML = `<div class="profile-empty">${escapeHtml(msg)}</div>`;
+    }
+  }
+
+  // 从最近缓存的 encounter 列表中找该用户的足迹，构造临时 profile
+  // （profile 表里没行时使用；显示该用户发过的最新一条留言里的昵称 / bio / links / tags）
+  function buildProfileFromEncounter(sessionId) {
+    if (!Array.isArray(lastRows)) return null;
+    const enc = lastRows.find(r => r.session_id === sessionId);
+    if (!enc) return null;
+    return {
+      session_id: enc.session_id,
+      nickname: enc.nickname || t('common.anonymous'),
+      bio: enc.bio || '',
+      links: Array.isArray(enc.links) ? enc.links : [],
+      tags: Array.isArray(enc.tags) ? normalizeTags(enc.tags) : [],
+      avatar_url: enc._avatar_url || null,
+      updated_at: enc.created_at || null,
+      _fromEncounter: true,
+    };
+  }
+  function closeProfilePage() {
+    el.profileMask.classList.remove('show');
+    // 如果刚刚看完的是导览账号，标记为已见过（关闭后才标记，让用户能反复查看）
+    if (currentProfileSessionId === GUIDE_SESSION_ID) {
+      markGuideSeen();
+    }
+    currentProfileSessionId = null;
+  }
+  el.profileClose.addEventListener('click', closeProfilePage);
+  if (el.profileCloseX) el.profileCloseX.addEventListener('click', closeProfilePage);
+  el.profileMask.addEventListener('click', e => {
+    if (e.target === el.profileMask) closeProfilePage();
+  });
+
+  function renderProfilePage(p, msgs) {
+    el.profileContent.innerHTML = '';
+    if (!p) {
+      const empty = document.createElement('div');
+      empty.className = 'profile-empty';
+      empty.textContent = t('profile.empty');
+      el.profileContent.appendChild(empty);
+      return;
+    }
+
+    // Hero：头像 + 昵称 + bio
+    const hero = document.createElement('div');
+    hero.className = 'profile-hero';
+    const av = document.createElement('div');
+    av.className = 'avatar xl';
+    fillAvatar(av, p.nickname, p.avatar_url ? avatarUrlWithBust(p.avatar_url) : null);
+    hero.appendChild(av);
+    const txt = document.createElement('div');
+    txt.style.flex = '1 1 auto';
+    txt.style.minWidth = '0';
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = p.nickname || t('common.anonymous');
+    txt.appendChild(name);
+    if (p.bio) {
+      const bio = document.createElement('div');
+      bio.className = 'bio';
+      bio.textContent = p.bio;
+      txt.appendChild(bio);
+    }
+    hero.appendChild(txt);
+    el.profileContent.appendChild(hero);
+
+    // 标签（新版：[{tag, items[]}]；兼容旧字符串数组）
+    const tags = normalizeTags(p.tags);
+    if (tags.length) {
+      const sec = document.createElement('div');
+      sec.className = 'profile-section';
+      const h = document.createElement('h4');
+      h.textContent = t('profile.tags');
+      sec.appendChild(h);
+      const wrap = document.createElement('div');
+      wrap.className = 'profile-tags';
+      wrap.style.flexDirection = 'column';
+      wrap.style.alignItems = 'flex-start';
+      wrap.style.gap = '4px';
+      tags.forEach(o => {
+        const line = document.createElement('div');
+        line.style.cssText = 'font-size:13px;line-height:1.5;color:var(--text);';
+        const head = document.createElement('span');
+        head.style.cssText = 'display:inline-block;padding:2px 9px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px;';
+        head.textContent = o.tag;
+        line.appendChild(head);
+        if (o.items && o.items.length) {
+          const tail = document.createElement('span');
+          tail.style.color = 'var(--text-dim)';
+          tail.textContent = o.items.join(' · ');
+          line.appendChild(tail);
+        }
+        wrap.appendChild(line);
+      });
+      sec.appendChild(wrap);
+      el.profileContent.appendChild(sec);
+    }
+
+    // 链接
+    const links = Array.isArray(p.links) ? p.links : [];
+    if (links.length) {
+      const sec = document.createElement('div');
+      sec.className = 'profile-section';
+      const h = document.createElement('h4');
+      h.textContent = t('profile.contact');
+      sec.appendChild(h);
+      const wrap = document.createElement('div');
+      wrap.className = 'profile-links';
+      links.forEach(l => {
+        const info = LINK_TYPES[l.type] || LINK_TYPES.other;
+        const a = document.createElement('a');
+        a.className = 'profile-link';
+        a.href = (l.type === 'wechat') ? '#' : l.url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.innerHTML = linkIcon(l.type || 'other');
+        const label = document.createElement('span');
+        label.textContent = (l.label && String(l.label).trim()) ? l.label : info.label;
+        a.appendChild(label);
+        if (l.type !== 'wechat') {
+          try {
+            const host = new URL(l.url).hostname.replace(/^www\./, '');
+            const u = document.createElement('span');
+            u.className = 'url';
+            u.textContent = host;
+            a.appendChild(u);
+          } catch {}
+        }
+        if (l.type === 'wechat') {
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            try { navigator.clipboard.writeText(l.url); } catch {}
+showToast(t('profile.copyWx', { wx: l.url }));
+          });
+        }
+        wrap.appendChild(a);
+      });
+      sec.appendChild(wrap);
+      el.profileContent.appendChild(sec);
+    }
+
+    // 最近留言
+    const sec = document.createElement('div');
+    sec.className = 'profile-section';
+    const h = document.createElement('h4');
+    h.textContent = t('profile.recent', { n: msgs.length });
+    sec.appendChild(h);
+    if (!msgs.length) {
+      const empty = document.createElement('div');
+      empty.className = 'profile-empty';
+      empty.textContent = t('profile.recentEmpty');
+      sec.appendChild(empty);
+    } else {
+      const wrap = document.createElement('div');
+      wrap.className = 'profile-msgs';
+      msgs.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'profile-msg';
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = formatRelative(m.created_at);
+        card.appendChild(meta);
+        const body = document.createElement('div');
+        body.textContent = m.content;
+        body.style.whiteSpace = 'pre-wrap';
+        body.style.wordWrap = 'break-word';
+        card.appendChild(body);
+        wrap.appendChild(card);
+      });
+      sec.appendChild(wrap);
+    }
+    el.profileContent.appendChild(sec);
+  }
+  el.settingsMask.addEventListener('click', e => {
+    if (e.target === el.settingsMask) closeSettings();
+  });
+  el.settingsNick.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); saveSettings(); }
+  });
+
+  /* ============================================================
+     12. 定位
+     ============================================================ */
+  function startGeolocation() {
+    if (!('geolocation' in navigator)) {
+      setLocationState('error', t('status.error'));
+      return;
+    }
+    navigator.geolocation.watchPosition(
+      pos => {
+        state.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (state.locState !== 'ok') {
+          setLocationState('ok', t('status.ok'));
+          refresh();
+        }
+      },
+      err => {
+        if (err.code === 1) setLocationState('denied', t('status.denied'));
+        else                setLocationState('error',  t('status.denied'));
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    );
+  }
+
+  /* ============================================================
+     13. 列表渲染
+     ============================================================ */
+  // 链接 chip 的 SVG icon 库
+  function linkIcon(type) {
+    const icons = {
+      wechat:
+        '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 4C5.4 4 2 6.7 2 10.1c0 1.9 1.1 3.6 2.8 4.7l-.7 2.1 2.5-1.3c.8.2 1.6.3 2.5.3h.7c-.1-.5-.2-1-.2-1.5 0-3.3 3.2-5.9 7.1-5.9h.5C16.4 5.9 13.3 4 9.5 4Zm-3 3.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm4.4 3.6c-3.4 0-6 2-6 4.5s2.6 4.5 6 4.5c.7 0 1.3-.1 1.9-.3l2 1.1-.6-1.7c1.5-.9 2.5-2.3 2.5-3.9 0-2.5-2.7-4.5-5.8-4.5Zm-1.8 3a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6Zm3.6 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6Z"/></svg>',
+      xhs:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><text x="12" y="16" text-anchor="middle" font-size="10" fill="currentColor" stroke="none" font-family="sans-serif" font-weight="700">小红</text></svg>',
+      douyin:
+        '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.8c-.9-1-1.4-2.3-1.4-3.8h-3.3v13.3a2.7 2.7 0 1 1-2-2.6V9.4a6 6 0 1 0 5.3 6V8.5a8.3 8.3 0 0 0 4.7 1.5V6.7a5 5 0 0 1-3.3-.9Z"/></svg>',
+      website:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>',
+      other:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l4-4a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-4 4a5 5 0 0 0 7 7l1-1"/></svg>',
+    };
+    return icons[type] || icons.other;
+  }
+
+  // 把一行 row.links 渲染成 chip 数组
+  function renderLinksContainer(linksArr) {
+    const wrap = document.createElement('div');
+    wrap.className = 'links';
+    if (!Array.isArray(linksArr) || !linksArr.length) return wrap;
+    linksArr.forEach(l => {
+      if (!l || !l.url) return;
+      const t = l.type || 'website';
+      const info = LINK_TYPES[t] || LINK_TYPES.other;
+      const chip = document.createElement('a');
+      chip.className = 'chip ' + t;
+      // 内联 SVG icon
+      const iconWrap = document.createElement('span');
+      iconWrap.style.cssText = 'display:inline-flex;align-items:center;';
+      iconWrap.innerHTML = linkIcon(t);
+      const label = document.createElement('span');
+      label.className = 'chip-text';
+      if (t === 'wechat') {
+        label.textContent = `${t('link.wechat')}: ${l.url}`;
+      } else if (t === 'other' && l.label) {
+        // "其他"链接：显示用户自定义的名称 + 主机名
+        try {
+          const host = new URL(l.url).hostname.replace(/^www\./, '');
+          label.textContent = `${l.label} · ${host}`;
+        } catch {
+          label.textContent = l.label;
+        }
+      } else {
+        try {
+          const host = new URL(l.url).hostname.replace(/^www\./, '');
+          label.textContent = `${info.label} · ${host}`;
+        } catch {
+          label.textContent = info.label;
+        }
+      }
+      chip.appendChild(iconWrap);
+      chip.appendChild(label);
+      chip.href = (t === 'wechat') ? '#' : l.url;
+      chip.target = '_blank';
+      chip.rel = 'noopener noreferrer';
+      if (t === 'wechat') {
+        chip.addEventListener('click', e => {
+          e.preventDefault();
+          try { navigator.clipboard.writeText(l.url); } catch {}
+          showToast(t('debug.copiedSid') + '：' + l.url);
+        });
+      }
+      wrap.appendChild(chip);
+    });
+    return wrap;
+  }
+
+  // 简易 toast（用来提示微信号已复制等）
+  function showToast(msg) {
+    let t = document.getElementById('toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toast';
+      t.style.cssText =
+        'position:fixed;left:50%;bottom:80px;transform:translateX(-50%);' +
+        'background:rgba(0,0,0,0.78);color:#fff;padding:10px 18px;border-radius:999px;' +
+        'font-size:13px;z-index:200;opacity:0;transition:opacity .2s ease;' +
+        'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);' +
+        'border:1px solid rgba(255,255,255,0.12);';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { t.style.opacity = '0'; }, 1800);
+  }
+
+  /* ============================================================
+     13b. 星空视图 —— 渲染附近的人为浮动头像
+     ============================================================ */
+
+  // 距离 → 头像属性映射
+  function avatarStarProps(distance) {
+    let size, opacity, level;
+    if (distance <= 20)      { size = 80; opacity = 1.0;  level = 'lvl-near'; }
+    else if (distance <= 50) { size = 60; opacity = 0.85; level = 'lvl-mid'; }
+    else if (distance <= 80) { size = 44; opacity = 0.65; level = 'lvl-far'; }
+    else                     { size = 36; opacity = 0.45; level = 'lvl-far'; }
+    // 半径：近靠中央，远靠边缘（最近 60px，最远约 min(280, w/2)）
+    const fieldW = (el.starfield && el.starfield.clientWidth) || 320;
+    const fieldH = (el.starfield && el.starfield.clientHeight) || 360;
+    const maxR = Math.min(fieldW, fieldH) / 2 - size;
+    const radius = 60 + (distance / CONFIG.RADIUS_METERS) * Math.max(80, maxR - 60);
+    return { size, opacity, radius, level };
+  }
+
+  // 6 色调色板（基于 hash）
+  function nickColor(nick) {
+    if (!nick) return '#00e5ff';
+    let h = 0;
+    for (let i = 0; i < nick.length; i++) h = (h * 31 + nick.charCodeAt(i)) >>> 0;
+    const palette = ['#00e5ff', '#7c4dff', '#ff5fae', '#3ecf8e', '#ff7a59', '#ffd166'];
+    return palette[h % palette.length];
+  }
+
+  // 一次性绘制背景星点（box-shadow 大法）
+  function generateStarfieldBackground() {
+    function layer(count, sizeMin, sizeMax, alphaMin, alphaMax) {
+      const shadows = [];
+      for (let i = 0; i < count; i++) {
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const size = sizeMin + Math.random() * (sizeMax - sizeMin);
+        const alpha = alphaMin + Math.random() * (alphaMax - alphaMin);
+        shadows.push(`${x}vw ${y}vh 0 ${size}px rgba(255,255,255,${alpha.toFixed(2)})`);
+      }
+      return shadows.join(', ');
+    }
+    if (el.starsL1) el.starsL1.style.boxShadow = layer(180, 0.5, 1.5, 0.30, 0.85);
+    if (el.starsL2) el.starsL2.style.boxShadow = layer(60,  1.5, 2.5, 0.50, 1.00);
+  }
+
+  // 流星
+  let meteorTimer = null;
+  function spawnMeteor() {
+    if (!el.meteors || !el.starfield) return;
+    const rect = el.starfield.getBoundingClientRect();
+    const m = document.createElement('div');
+    m.className = 'meteor';
+    const startX = Math.random() * rect.width * 0.8;
+    const startY = Math.random() * rect.height * 0.3;
+    m.style.left = startX + 'px';
+    m.style.top  = startY + 'px';
+    m.style.animation = `shoot ${(0.8 + Math.random() * 0.5).toFixed(2)}s linear forwards`;
+    el.meteors.appendChild(m);
+    setTimeout(() => m.remove(), 1500);
+  }
+  function startMeteors() {
+    stopMeteors();
+    function loop() {
+      spawnMeteor();
+      meteorTimer = setTimeout(loop, 8000 + Math.random() * 7000);
+    }
+    meteorTimer = setTimeout(loop, 2000);
+  }
+  function stopMeteors() {
+    if (meteorTimer) { clearTimeout(meteorTimer); meteorTimer = null; }
+  }
+
+  // 星空主渲染
+  let currentBubble = null;
+  let currentProfileSessionId = null; // 当前打开的个人主页是哪个用户
+  let lastRows = [];
+  function clearStarfield() {
+    if (!el.starfield) return;
+    el.starfield.querySelectorAll('.star-avatar, .star-bubble').forEach(n => n.remove());
+    currentBubble = null;
+  }
+
+  function renderList(rows) {
+    if (!el.starfield) return;
+    clearStarfield();
+    lastRows = rows;
+    if (!rows.length) {
+      el.empty.style.display = 'block';
+      refreshEmptyHint();
+      return;
+    }
+    el.empty.style.display = 'none';
+
+    const rect = el.starfield.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+
+    rows.forEach((r, idx) => {
+      const props = avatarStarProps(r.distance);
+      const color = nickColor(r.nickname);
+
+      // 黄金角分布（基于 idx 稳定）+ 小幅抖动
+      const angle = (idx * 137.508) * Math.PI / 180 + (r._hash || 0);
+      const px = cx + Math.cos(angle) * props.radius;
+      const py = cy + Math.sin(angle) * props.radius;
+
+      // 头像元素
+      const av = document.createElement('div');
+      av.className = `star-avatar ${props.level}${r._isGuide ? ' is-guide' : ''}`;
+      av.style.left = `${px}px`;
+      av.style.top  = `${py}px`;
+      av.style.width  = `${props.size}px`;
+      av.style.height = `${props.size}px`;
+      av.style.fontSize = `${Math.round(props.size * 0.4)}px`;
+      av.style.opacity = String(props.opacity);
+      av.style.zIndex = String(100 - Math.min(99, Math.round(r.distance)));
+      av.style.background = `linear-gradient(135deg, ${color}33, ${color}11)`;
+      av.style.color = color;
+      av.style.borderColor = `${color}aa`;
+      av.title = `${r.nickname || t('common.anonymous')} · ${formatDistance(r.distance)}`;
+
+      const avUrl = r._avatar_url ? avatarUrlWithBust(r._avatar_url) : null;
+      fillAvatar(av, r.nickname || t('common.anonShort'), avUrl);
+
+      // 气泡元素
+      const bubble = document.createElement('div');
+      bubble.className = 'star-bubble';
+      bubble.style.left = `${px}px`;
+      bubble.style.top  = `${py}px`;
+      bubble.innerHTML = `
+        <div class="bubble-nick" style="color:${color}">${escapeHtml(r.nickname || t('common.anonymous'))}</div>
+        <div class="bubble-meta">${formatDistance(r.distance)} · ${formatRelative(r.created_at)}</div>
+        <div class="bubble-body">${escapeHtml(r.content || '')}</div>
+      `;
+      el.starfield.appendChild(bubble);
+
+      // 桌面端 hover：显示气泡；移动端无 hover，依靠 click 切换
+      // 用 (pointer: coarse) 判定触屏更可靠 —— Android Chrome 模拟 hover 时也会被认为是 coarse
+      const isTouch = window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches);
+      const supportsHover = !isTouch;
+      av.addEventListener('mouseenter', () => {
+        if (!supportsHover) return;
+        if (currentBubble && currentBubble !== bubble) currentBubble.classList.remove('show');
+        bubble.classList.add('show');
+        currentBubble = bubble;
+      });
+      av.addEventListener('mouseleave', () => {
+        if (!supportsHover) return;
+        setTimeout(() => {
+          if (currentBubble === bubble) {
+            bubble.classList.remove('show');
+            currentBubble = null;
+          }
+        }, 150);
+      });
+
+      // 点击头像：直接打开个人主页（桌面、移动端行为一致，最稳）
+      // 移动端不依赖 toggle —— 个人主页里就有完整留言、bio、联系方式、链接
+      av.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // 关闭任何悬停气泡（桌面）
+        if (currentBubble) {
+          currentBubble.classList.remove('show');
+          currentBubble = null;
+        }
+        openProfilePage(r.session_id);
+      });
+
+      el.starfield.appendChild(av);
+    });
+  }
+
+  // 星空区域点击空白处关闭气泡
+  if (el.starfield) {
+    el.starfield.addEventListener('click', (e) => {
+      if (e.target === el.starfield) {
+        if (currentBubble) {
+          currentBubble.classList.remove('show');
+          currentBubble = null;
+        }
+      }
+    });
+  }
+
+  // HTML 转义（避免 XSS）
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ============================================================
+     14. 数据拉取
+     ============================================================ */
+  async function refresh() {
+    const locReady = state.loc && state.locState === 'ok';
+    const since = new Date(Date.now() - CONFIG.WINDOW_MINUTES * 60 * 1000).toISOString();
+    dbg.lastFetchAt = new Date();
+    dbg.lastFetchErr = null;
+    try {
+      // 还没定位好时，仍先渲染导览账号（让 universal 立刻可见，不被定位阻塞）
+      if (!locReady) {
+        const guideOnly = [];
+        await injectGuideUser(guideOnly);
+        if (guideOnly.length) {
+          dbg.lastFetchCount = guideOnly.length;
+          renderList(guideOnly);
+          setTimeout(showGuideHint, 600);
+        }
+        return;
+      }
+      const { data, error } = await sb
+        .from('nearby_encounters')
+        .select('id, content, latitude, longitude, session_id, nickname, bio, links, tags, created_at')
+        .gt('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+
+      const me = state.loc;
+      const filtered = (data || [])
+        .filter(r => dbg.noSelfIso ? true : (r.session_id !== SESSION_ID))
+        .map(r => {
+          const distance = haversine(me, { lat: r.latitude, lng: r.longitude });
+          return { ...r, distance };
+        })
+        .filter(r => r.distance <= CONFIG.RADIUS_METERS)
+        .sort((a, b) => a.distance - b.distance);
+
+      // 顺手拉取这些作者的 profile（用于头像 + 链接 + 标签的实时数据）
+      const sids = Array.from(new Set(filtered.map(r => r.session_id)));
+      const profileMap = await fetchProfilesByIds(sids);
+      filtered.forEach(r => {
+        const p = profileMap.get(r.session_id);
+        if (p) {
+          // 优先用 profile 里的最新字段（昵称、bio、标签、链接、头像）
+          r._avatar_url = p.avatar_url;
+          r._profile = p;
+        } else {
+          r._avatar_url = null;
+          r._profile = null;
+        }
+      });
+
+      // 注入导览账号 universal（仅首次登录）
+      await injectGuideUser(filtered);
+
+      dbg.lastFetchCount = filtered.length;
+      renderList(filtered);
+      // 首次登录时，在 universal 头像上显示引导提示气泡
+      setTimeout(showGuideHint, 600);
+      showNetWarn(false);
+    } catch (e) {
+      console.warn('fetch encounters failed', e);
+      dbg.lastFetchErr = (e && (e.message || e.toString())) || String(e);
+      showNetWarn(true);
+    }
+    updateDebugPanel();
+  }
+
+  /* ============================================================
+     14b. 导览账号 universal —— 首次登录时出现，作为星空用法引导
+     ============================================================ */
+  const GUIDE_SESSION_ID = '__universal_guide__';
+  const GUIDE_SEEN_KEY = 'universal_guide_seen';
+
+  // 同步构造一条"假"记录插入到 filtered 列表
+  // profile 数据从 profiles 表里读（用户先跑 setup-guide-user.sql 创建）
+  async function injectGuideUser(filtered) {
+    if (localStorage.getItem(GUIDE_SEEN_KEY) === '1') return;
+    // 避免重复注入
+    if (filtered.some(r => r.session_id === GUIDE_SESSION_ID)) return;
+    console.log('[guide] injecting universal into list of size', filtered.length);
+
+    let profile = null;
+    try {
+      profile = await fetchProfile(GUIDE_SESSION_ID);
+    } catch (e) {
+      console.warn('[guide] fetchProfile failed', e);
+    }
+
+    // 如果云端没有 universal 记录，前端降级：用默认值
+    const p = profile || guideFallbackProfile();
+
+    const guideRow = {
+      id: 'guide-' + GUIDE_SESSION_ID,
+      content: t('guide.content'),
+      latitude: 0,
+      longitude: 0,
+      session_id: GUIDE_SESSION_ID,
+      nickname: p.nickname || 'universal',
+      bio: p.bio || '',
+      links: Array.isArray(p.links) ? p.links : [],
+      tags: Array.isArray(p.tags) ? p.tags : [],
+      created_at: new Date().toISOString(),
+      distance: 50,  // 固定 50 米，落在 mid 层（60px）
+      _avatar_url: p.avatar_url || null,
+      _profile: p,
+      _isGuide: true,
+    };
+
+    // 插入到合适的位置：距离升序，50 米应该在中间
+    filtered.push(guideRow);
+    filtered.sort((a, b) => a.distance - b.distance);
+  }
+
+  // 显示"点击我"提示气泡（仅首次）
+  function showGuideHint() {
+    if (localStorage.getItem(GUIDE_SEEN_KEY) === '1') return;
+    const av = el.starfield && el.starfield.querySelector('.star-avatar.is-guide');
+    if (!av) return;
+    const bubble = av.nextElementSibling;
+    if (!bubble || !bubble.classList.contains('star-bubble')) return;
+    // 强制显示（绕过 hover）
+    if (currentBubble) currentBubble.classList.remove('show');
+    bubble.classList.add('show');
+    bubble.classList.add('guide-hint');
+    currentBubble = bubble;
+    // 加一个箭头提示
+    if (!bubble.querySelector('.guide-tag')) {
+      const tag = document.createElement('div');
+      tag.className = 'guide-tag';
+      tag.textContent = t('debug.guideTag');
+      bubble.appendChild(tag);
+    }
+  }
+
+  // 用户点击了 universal 头像 → 标记已见过，关闭提示
+  function markGuideSeen() {
+    try { localStorage.setItem(GUIDE_SEEN_KEY, '1'); } catch (e) {}
+    const hint = el.starfield && el.starfield.querySelector('.guide-hint');
+    if (hint) {
+      const tag = hint.querySelector('.guide-tag');
+      if (tag) tag.remove();
+      hint.classList.remove('guide-hint');
+    }
+  }
+
+  // 批量拉取多个 session_id 的 profile
+  async function fetchProfilesByIds(sessionIds) {
+    const map = new Map();
+    if (!sessionIds || !sessionIds.length) return map;
+    try {
+      const { data, error } = await sb
+        .from('profiles')
+        .select('session_id, nickname, bio, tags, links, avatar_url, updated_at')
+        .in('session_id', sessionIds);
+      if (error) throw error;
+      (data || []).forEach(p => map.set(p.session_id, p));
+    } catch (e) {
+      console.warn('fetchProfilesByIds failed', e);
+    }
+    return map;
+  }
+
+  function startPolling() {
+    stopPolling();
+    const tick = () => { if (!document.hidden) refresh(); };
+    tick();
+    const jitter = Math.floor(Math.random() * 2000);
+    state.pollTimer = setInterval(tick, CONFIG.POLL_MS + jitter);
+  }
+  function stopPolling() {
+    if (state.pollTimer) clearInterval(state.pollTimer);
+    state.pollTimer = null;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      refresh();
+      startMeteors();
+    } else {
+      stopMeteors();
+    }
+  });
+
+  /* ============================================================
+     15. 提交
+     ============================================================ */
+  async function submit() {
+    if (state.submitting) return;
+    if (!profile) { showOnboarding(); return; }
+
+    const text = el.content.value.trim();
+    if (!text) { setHint(t('composer.empty'), 'err'); return; }
+    if (!state.loc || state.locState !== 'ok') {
+      setHint(t('composer.locatingWait'), 'err');
+      return;
+    }
+
+    state.submitting = true;
+    el.submitBtn.disabled = true;
+    setHint(t('composer.sending'));
+
+    try {
+      const { error } = await sb.from('nearby_encounters').insert({
+        content:    text,
+        latitude:   state.loc.lat,
+        longitude:  state.loc.lng,
+        session_id: SESSION_ID,
+        nickname:   profile.nickname,
+        bio:        profile.bio || null,
+        links:      Array.isArray(profile.links) ? profile.links : [],
+        tags:       Array.isArray(profile.tags) ? profile.tags : [],
+      });
+      if (error) throw error;
+      el.content.value = '';
+      setHint(t('composer.sent'), 'ok');
+      setTimeout(() => setHint(t('composer.hint')), 2000);
+      refresh();
+    } catch (e) {
+      console.warn('insert failed', e);
+      const msg = (e && (e.message || e.details || e.hint)) || String(e);
+      setHint(t('composer.sendFailed', { msg: msg || t('composer.sendFailedShort') }), 'err');
+      showNetWarn(true);
+      // 把错误塞进调试面板，方便排查
+      const dbgErr = document.getElementById('dbgErr');
+      if (dbgErr) {
+        dbgErr.style.display = '';
+        dbgErr.textContent = t('debug.sendFailTitle') + msg;
+      }
+    } finally {
+      state.submitting = false;
+      el.submitBtn.disabled = !profile || (state.locState !== 'ok');
+    }
+  }
+
+  /* ============================================================
+     16. 事件
+     ============================================================ */
+  el.content.addEventListener('input', () => {
+    const len = el.content.value.length;
+    setHint(len ? t('composer.charCount', { n: len }) : t('composer.hint'));
+  });
+  el.submitBtn.addEventListener('click', submit);
+  el.content.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submit();
+    }
+  });
+
+  /* ============================================================
+     17. 调试面板
+     ============================================================ */
+  const dbg = {
+    noSelfIso: false,
+    lastFetchAt: null,
+    lastFetchErr: null,
+    lastFetchCount: 0,
+  };
+
+  const LOC_PRESETS = {
+    beijing:  { lat: 39.9087, lng: 116.3975 },
+    shanghai: { lat: 31.2400, lng: 121.4900 },
+    tokyo:    { lat: 35.6595, lng: 139.7005 },
+  };
+
+  function openDebugPanel() {
+    el.debugPanel.classList.add('show');
+    updateDebugPanel();
+  }
+  function closeDebugPanel() {
+    el.debugPanel.classList.remove('show');
+  }
+
+  function updateDebugPanel() {
+    if (!el.debugPanel.classList.contains('show')) return;
+    el.dbgSid.textContent = SESSION_ID.slice(0, 16) + '…';
+    el.dbgUrl.textContent = (() => {
+      try {
+        const u = new URL(CONFIG.SUPABASE_URL);
+        return u.host;
+      } catch { return t('common.unset'); }
+    })();
+    el.dbgLocState.textContent = state.locState;
+    el.dbgLoc.textContent = state.loc
+      ? `${state.loc.lat.toFixed(5)}, ${state.loc.lng.toFixed(5)}`
+      : '—';
+    el.dbgProfile.textContent = profile
+      ? t('common.profileMeta', { name: profile.nickname, tags: (profile.tags || []).length, links: (profile.links || []).length })
+      : '—';
+    const rangeSuffix = ` · ${CONFIG.RADIUS_METERS}m / ${CONFIG.WINDOW_MINUTES}min`;
+    el.dbgLastFetch.textContent = dbg.lastFetchAt
+      ? t('common.lastFetchFmt', { time: dbg.lastFetchAt.toLocaleTimeString(), n: dbg.lastFetchCount }) + rangeSuffix
+      : `—${rangeSuffix}`;
+    // 高亮当前 range / window 按钮
+    document.querySelectorAll('#dbgRadiusBtns [data-radius]').forEach(b => {
+      const on = parseInt(b.dataset.radius, 10) === CONFIG.RADIUS_METERS;
+      b.style.background = on ? 'var(--accent)' : '';
+      b.style.color = on ? '#001018' : '';
+    });
+    document.querySelectorAll('#dbgWindowBtns [data-window]').forEach(b => {
+      const on = parseInt(b.dataset.window, 10) === CONFIG.WINDOW_MINUTES;
+      b.style.background = on ? 'var(--accent)' : '';
+      b.style.color = on ? '#001018' : '';
+    });
+    if (dbg.lastFetchErr) {
+      el.dbgErr.style.display = 'block';
+      el.dbgErr.textContent = dbg.lastFetchErr;
+    } else {
+      el.dbgErr.style.display = 'none';
+    }
+  }
+
+  // 元素引用
+  el.debugPanel = document.getElementById('debugPanel');
+  el.debugClose = document.getElementById('debugClose');
+  el.dbgSid = document.getElementById('dbgSid');
+  el.dbgUrl = document.getElementById('dbgUrl');
+  el.dbgLocState = document.getElementById('dbgLocState');
+  el.dbgLoc = document.getElementById('dbgLoc');
+  el.dbgProfile = document.getElementById('dbgProfile');
+  el.dbgLastFetch = document.getElementById('dbgLastFetch');
+  el.dbgErr = document.getElementById('dbgErr');
+  el.dbgNoSelfIso = document.getElementById('dbgNoSelfIso');
+
+  el.debugClose.addEventListener('click', closeDebugPanel);
+
+  // 长按齿轮 / 连点齿轮 5 次打开调试面板
+  let pressTimer = null;
+  let pressTriggered = false;
+  let tapCount = 0;
+  let tapTimer = null;
+  el.settingsBtn.addEventListener('mousedown', e => {
+    pressTriggered = false;
+    pressTimer = setTimeout(() => {
+      pressTriggered = true;
+      openDebugPanel();
+    }, 1000);
+  });
+  ['mouseup', 'mouseleave'].forEach(ev =>
+    el.settingsBtn.addEventListener(ev, () => {
+      if (pressTimer) clearTimeout(pressTimer);
+      pressTimer = null;
+    })
+  );
+  el.settingsBtn.addEventListener('touchstart', e => {
+    pressTriggered = false;
+    pressTimer = setTimeout(() => {
+      pressTriggered = true;
+      openDebugPanel();
+    }, 1000);
+  }, { passive: true });
+  el.settingsBtn.addEventListener('touchend', () => {
+    if (pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+  });
+  el.settingsBtn.addEventListener('click', e => {
+    if (pressTriggered) {
+      // 长按触发的，不当 click 处理
+      e.preventDefault(); e.stopPropagation();
+      pressTriggered = false;
+      return;
+    }
+    // 短按：连点 5 次也算调试入口（移动端备用）
+    tapCount++;
+    if (tapTimer) clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { tapCount = 0; }, 1500);
+    if (tapCount >= 5) {
+      tapCount = 0;
+      openDebugPanel();
+      return;
+    }
+    openSettings();
+  });
+
+  // 模拟位置
+  document.querySelectorAll('#debugPanel [data-loc]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.loc;
+      if (k === 'real') {
+        // 触发一次真实定位
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            state.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            if (state.locState !== 'ok') setLocationState('ok', t('status.ok'));
+            refresh();
+            updateDebugPanel();
+          },
+          () => updateDebugPanel()
+        );
+      } else {
+        const p = LOC_PRESETS[k];
+        if (!p) return;
+        state.loc = { lat: p.lat, lng: p.lng };
+        setLocationState('ok', t('common.mock') + btn.textContent);
+        refresh();
+        updateDebugPanel();
+      }
+    });
+  });
+
+  // 禁用自我隔离
+  el.dbgNoSelfIso.addEventListener('change', () => {
+    dbg.noSelfIso = el.dbgNoSelfIso.checked;
+    refresh();
+  });
+
+  // 手动刷新 / 复制 SID / 清空
+  document.getElementById('dbgRefresh').addEventListener('click', () => {
+    refresh();
+  });
+  document.getElementById('dbgCopySid').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(SESSION_ID);
+      showToast(t('debug.copiedSid'));
+    } catch {
+      showToast(t('debug.copyFailed'));
+    }
+  });
+  document.getElementById('dbgClear').addEventListener('click', () => {
+    if (!confirm(t('debug.confirmClear'))) return;
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    location.reload();
+  });
+
+  // 范围 / 时间快速调整（仅改 CONFIG，立刻拉一次）
+  document.querySelectorAll('#dbgRadiusBtns [data-radius]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = parseInt(btn.dataset.radius, 10);
+      if (!m) return;
+      CONFIG.RADIUS_METERS = m;
+      updateDebugPanel();
+      refreshEmptyHint();
+      showToast(t('debug.rangeToast', { m }));
+      refresh();
+    });
+  });
+  document.querySelectorAll('#dbgWindowBtns [data-window]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = parseInt(btn.dataset.window, 10);
+      if (!m) return;
+      CONFIG.WINDOW_MINUTES = m;
+      updateDebugPanel();
+      refreshEmptyHint();
+      showToast(t('debug.windowToast', { m }));
+      refresh();
+    });
+  });
+
+  /* ============================================================
+     18. 启动
+     ============================================================ */
+  syncButtonLabel();
+  applyProfileToUI();
+  // 星空视图初始化
+  generateStarfieldBackground();
+  startMeteors();
+  // 窗口尺寸变化时重新分布头像（防抖 200ms）
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (lastRows.length) renderList(lastRows);
+    }, 200);
+  });
+  if (!profile) showOnboarding();
+  // 首次登录时显示顶部欢迎提示
+  if (localStorage.getItem(GUIDE_SEEN_KEY) !== '1') {
+    const w = document.getElementById('welcomeHint');
+    if (w) w.style.display = 'block';
+  }
+  // 应用 i18n（覆盖静态 HTML 上的 data-i18n）
+  document.documentElement.lang = (state_lang.lang === 'zh') ? 'zh-CN' : 'en';
+  applyI18n();
+  refreshEmptyHint();
+  startGeolocation();
+  // 即便定位还没成功，也先尝试显示导览账号 universal（避免被定位阻塞）
+  (async () => {
+    try {
+      const guideOnly = [];
+      await injectGuideUser(guideOnly);
+      if (guideOnly.length) {
+        dbg.lastFetchCount = guideOnly.length;
+        renderList(guideOnly);
+        setTimeout(showGuideHint, 600);
+        updateDebugPanel();
+      }
+    } catch (e) { console.warn('show guide (init) failed', e); }
+  })();
+  startPolling();
+  updateDebugPanel();
+
+  // 尝试从云端拉取 profile（如果本地没有，但云端有——比如换设备/清缓存后）
+  (async () => {
+    try {
+      const remote = await fetchProfile(SESSION_ID);
+      if (remote && (!profile || !profile.nickname)) {
+        // 用云端的 profile 覆盖本地（用户换设备/清缓存的场景）
+        profile = {
+          nickname: remote.nickname,
+          bio: remote.bio || '',
+          tags: normalizeTags(remote.tags),
+          links: Array.isArray(remote.links) ? remote.links : [],
+          avatar_url: remote.avatar_url || null,
+        };
+        saveProfile(profile);
+        applyProfileToUI();
+      }
+    } catch (e) { console.warn('load remote profile failed', e); }
+  })();
+</script>
+</body>
+</html>
