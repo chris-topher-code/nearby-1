@@ -2224,6 +2224,7 @@
   // 接受任意旧/新格式，返回规范化的 [{tag, items[]}]
   // 旧: ['🎬 电影'] 或 ['movies']
   // 新: [{tag:'🎬 电影', items:['指环王']}]
+  // 损坏数据: '{"tag":"💬 G' (被双重 stringify + 截断)
   function normalizeTags(arr) {
     if (!Array.isArray(arr)) return [];
     const seen = new Set();
@@ -2231,9 +2232,39 @@
     for (const raw of arr) {
       let tag = null, items = [];
       if (typeof raw === 'string') {
-        tag = raw.trim().slice(0, 12);
+        let s = raw.trim();
+        // 防御：旧版前端把整个对象 JSON.stringify 当成字符串写入数据库
+        if (s.startsWith('{') && s.endsWith('}')) {
+          try {
+            const obj = JSON.parse(s);
+            if (obj && typeof obj === 'object' && typeof obj.tag === 'string') {
+              tag = obj.tag.trim();
+              if (Array.isArray(obj.items)) {
+                for (const it of obj.items) {
+                  if (typeof it !== 'string') continue;
+                  const v = it.trim().slice(0, MAX_TAG_ITEM_LEN);
+                  if (!v) continue;
+                  items.push(v);
+                  if (items.length >= MAX_ITEMS_PER_TAG) break;
+                }
+              }
+            } else {
+              tag = s; // 无法识别，按字符串处理
+            }
+          } catch (e) {
+            tag = s;
+          }
+        } else {
+          tag = s;
+        }
+        // 截断到最大长度
+        tag = tag.slice(0, 12);
+        // 防御：标签太短（< 3 字符）或看起来是损坏 JSON 片段 → 丢弃
+        if (!tag || tag.length < 3 || /^\{?".*"$/.test(tag)) {
+          tag = null;
+        }
       } else if (raw && typeof raw === 'object' && typeof raw.tag === 'string') {
-        tag = String(raw.tag).trim().slice(0, 12);
+        tag = String(raw.tag).trim();
         if (Array.isArray(raw.items)) {
           for (const it of raw.items) {
             if (typeof it !== 'string') continue;
@@ -2243,6 +2274,7 @@
             if (items.length >= MAX_ITEMS_PER_TAG) break;
           }
         }
+        tag = tag.slice(0, 12);
       }
       if (!tag) continue;
       if (seen.has(tag)) {
