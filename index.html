@@ -63,6 +63,58 @@
       }
     }
 
+    /* =========================================================
+       主题色切换（用户可在设置里选）—— 只改强调色，不动背景
+       ========================================================= */
+    [data-theme="aurora"] {
+      --accent:      #50ffb1;
+      --accent-2:    #d8ff50;
+      --accent-3:    #50ffd0;
+    }
+    [data-theme="sunset"] {
+      --accent:      #ff9650;
+      --accent-2:    #ffd850;
+      --accent-3:    #ff50c8;
+    }
+    [data-theme="glacier"] {
+      --accent:      #50c8ff;
+      --accent-2:    #a8d8ff;
+      --accent-3:    #e0f8ff;
+    }
+    [data-theme="sakura"] {
+      --accent:      #ff7eb6;
+      --accent-2:    #ffb8d8;
+      --accent-3:    #c87eff;
+    }
+
+    /* 主题切换器 UI（设置弹层里） */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .theme-swatch {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .theme-swatch:hover { border-color: var(--accent); }
+    .theme-swatch.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    .theme-swatch .dots { display: flex; gap: 4px; }
+    .theme-swatch .dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .theme-swatch .name { font-size: 13px; color: var(--text); font-weight: 500; }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     /* =========================================================
@@ -1560,6 +1612,32 @@
 
     <hr style="border:none;border-top:1px solid var(--border);margin:18px 0 12px" />
 
+    <span class="section-title" data-i18n="settings.themeTitle">主题色</span>
+    <div class="theme-grid" id="themeGrid">
+      <div class="theme-swatch active" data-theme="">
+        <div class="dots"><span class="dot" style="background:#00e5ff"></span><span class="dot" style="background:#7c4dff"></span></div>
+        <span class="name" data-i18n="settings.themeDefault">默认青蓝</span>
+      </div>
+      <div class="theme-swatch" data-theme="aurora">
+        <div class="dots"><span class="dot" style="background:#50ffb1"></span><span class="dot" style="background:#d8ff50"></span></div>
+        <span class="name" data-i18n="settings.themeAurora">极光</span>
+      </div>
+      <div class="theme-swatch" data-theme="sunset">
+        <div class="dots"><span class="dot" style="background:#ff9650"></span><span class="dot" style="background:#ff50c8"></span></div>
+        <span class="name" data-i18n="settings.themeSunset">落日</span>
+      </div>
+      <div class="theme-swatch" data-theme="glacier">
+        <div class="dots"><span class="dot" style="background:#50c8ff"></span><span class="dot" style="background:#e0f8ff"></span></div>
+        <span class="name" data-i18n="settings.themeGlacier">冰川</span>
+      </div>
+      <div class="theme-swatch" data-theme="sakura">
+        <div class="dots"><span class="dot" style="background:#ff7eb6"></span><span class="dot" style="background:#c87eff"></span></div>
+        <span class="name" data-i18n="settings.themeSakura">樱花</span>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:18px 0 12px" />
+
     <span class="section-title" data-i18n="settings.account">账号</span>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
       <button type="button" id="settingsLogout" class="ghost" style="width:100%" data-i18n="settings.logout">
@@ -1714,6 +1792,12 @@
       'settings.account': '账号',
       'settings.logout': '退出当前账号（清除本地身份，重新登录）',
       'settings.resetGuide': '重新显示导览账号 universal',
+      'settings.themeTitle': '主题色',
+      'settings.themeDefault': '默认青蓝',
+      'settings.themeAurora': '极光',
+      'settings.themeSunset': '落日',
+      'settings.themeGlacier': '冰川',
+      'settings.themeSakura': '樱花',
       'settings.language': '语言',
       'settings.langZh': '中文',
       'settings.langEn': 'English',
@@ -1889,6 +1973,12 @@
       'settings.account': 'Account',
       'settings.logout': 'Log out (clears local identity)',
       'settings.resetGuide': 'Show guide user universal again',
+      'settings.themeTitle': 'Theme',
+      'settings.themeDefault': 'Default cyan',
+      'settings.themeAurora': 'Aurora',
+      'settings.themeSunset': 'Sunset',
+      'settings.themeGlacier': 'Glacier',
+      'settings.themeSakura': 'Sakura',
       'settings.language': 'Language',
       'settings.langZh': '中文',
       'settings.langEn': 'English',
@@ -2553,6 +2643,7 @@
     settingsAvatarFile: document.getElementById('settingsAvatarFile'),
     settingsLogout:    document.getElementById('settingsLogout'),
     settingsResetGuide: document.getElementById('settingsResetGuide'),
+    themeGrid:         document.getElementById('themeGrid'),
     langBtnZh:         document.getElementById('langBtnZh'),
     langBtnEn:         document.getElementById('langBtnEn'),
 
@@ -3067,6 +3158,31 @@
   el.langBtnEn = document.getElementById('langBtnEn');
   if (el.langBtnZh) el.langBtnZh.addEventListener('click', () => setLang('zh'));
   if (el.langBtnEn) el.langBtnEn.addEventListener('click', () => setLang('en'));
+
+  /* ============================================================
+     主题色切换（用户可在设置弹层里选）
+     ============================================================ */
+  const THEME_KEY = 'encounter_theme';
+  function applyTheme(theme) {
+    if (theme) document.documentElement.setAttribute('data-theme', theme);
+    else document.documentElement.removeAttribute('data-theme');
+    document.querySelectorAll('.theme-swatch').forEach(s => {
+      s.classList.toggle('active', (s.dataset.theme || '') === (theme || ''));
+    });
+  }
+  if (el.themeGrid) {
+    el.themeGrid.addEventListener('click', e => {
+      const sw = e.target.closest('.theme-swatch');
+      if (!sw) return;
+      const theme = sw.dataset.theme || '';
+      applyTheme(theme);
+      try { localStorage.setItem(THEME_KEY, theme); } catch (err) {}
+    });
+  }
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved != null) applyTheme(saved);
+  } catch (e) {}
 
   // 退出当前账号：清空本地身份 + 会话 ID，重新进入引导
   el.settingsLogout.addEventListener('click', () => {
