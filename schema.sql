@@ -97,13 +97,14 @@ create policy "nearby_encounters_insert_anon"
 -- 3. profiles 表（个人主页 / 头像 / 最新身份）
 -- ============================================================
 create table if not exists public.profiles (
-  session_id  text        primary key,
-  nickname    text,
-  bio         text,
-  tags        text[]      not null default '{}'::text[],
-  links       jsonb       not null default '[]'::jsonb,
-  avatar_url  text,
-  updated_at  timestamptz not null default now()
+  session_id      text        primary key,
+  nickname        text,
+  bio             text,
+  tags            text[]      not null default '{}'::text[],
+  links           jsonb       not null default '[]'::jsonb,
+  platform_labels jsonb       not null default '{}'::jsonb,
+  avatar_url      text,
+  updated_at      timestamptz not null default now()
 );
 
 -- 给老 profiles 表补列（如果存在但字段不全）
@@ -121,6 +122,10 @@ alter table public.profiles
   add column if not exists avatar_url text;
 alter table public.profiles
   add column if not exists updated_at timestamptz not null default now();
+
+-- 平台名覆盖表：用户把 "微信" 改名为 "Instagram" 等
+alter table public.profiles
+  add column if not exists platform_labels jsonb not null default '{}'::jsonb;
 
 -- 确保 session_id 是主键（如果是老表，先 drop 任何现存的主键约束再加）
 do $$
